@@ -10,7 +10,10 @@ const dialogStore = useDialogStore();
 
 const router = useRouter();
 
+const currentZundamonImage = defineModel("currentZundamonImage");
+
 onMounted(async () => {
+  currentZundamonImage.value = "sleeping";
   try {
     await serverStore.launch();
   } catch (e) {
