@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
+import { onMounted } from "vue";
+
+onMounted(() => {
+  invoke("launch");
+});
 
 const openFolder = async () => {
-  await invoke("openFolder");
+  await invoke("open_folder");
 };
 </script>
 <template>
   <div
+    un-flex-grow
     un-flex="~ col"
     un-justify="center"
     un-items="center"
     un-gap="2"
-    un-min-h="screen"
   >
     <p un-text="lg">起動中...</p>
     <a
@@ -53,7 +58,7 @@ const openFolder = async () => {
     un-left="0"
     un-right="0"
     un-bottom="2"
-    un-text="sm center"
+    un-text="xs center"
     un-op="50%"
   >
     ZundaArrow TTS - Developed by

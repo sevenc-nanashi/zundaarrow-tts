@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+zundamon_speech/*
+!zundamon_speech/.gitkeep
+!zundamon_speech/server
+zundamon_speech_setup/tmp

@@ -1,0 +1,9 @@
+[submodule "zundamon_speech_setup/zundamon-speech-webui"]
+	path = zundamon_speech_setup/zundamon-speech-webui
+	url = https://github.com/zunzun999/zundamon-speech-webui
+[submodule "zundamon_speech_setup/zundamon_GPT-SoVITS"]
+	path = zundamon_speech_setup/zundamon_GPT-SoVITS
+	url = https://huggingface.co/zunzunpj/zundamon_GPT-SoVITS
+[submodule "zundamon_speech_setup/GPT-SoVITS"]
+	path = zundamon_speech_setup/GPT-SoVITS
+	url = https://huggingface.co/lj1995/GPT-SoVITS

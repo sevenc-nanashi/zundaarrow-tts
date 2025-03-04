@@ -2,7 +2,7 @@
 import { RouterView } from "vue-router";
 </script>
 <template>
-  <main un-p="4" un-min-h="screen" un-z="50">
+  <main un-p="4" un-min-h="screen" un-z="50" un-flex="~ col">
     <RouterView v-slot="{ Component }">
       <Transition name="fade">
         <Component :is="Component" />
