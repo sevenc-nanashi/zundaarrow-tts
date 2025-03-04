@@ -1,9 +1,25 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
 import { onMounted } from "vue";
+import { useServerStore } from "../stores/server";
+import { invoke } from "../invoke";
+import { useDialogStore } from "../stores/dialog";
+import { useRouter } from "vue-router";
 
-onMounted(() => {
-  invoke("launch");
+const serverStore = useServerStore();
+const dialogStore = useDialogStore();
+
+const router = useRouter();
+
+onMounted(async () => {
+  try {
+    await serverStore.launch();
+  } catch (e) {
+    dialogStore.alert("サーバーの起動に失敗しました", String(e));
+  }
+
+  await serverStore.wait({ timeout: 300 });
+
+  router.push("/main");
 });
 
 const openFolder = async () => {
@@ -58,8 +74,8 @@ const openFolder = async () => {
     un-left="0"
     un-right="0"
     un-bottom="2"
-    un-text="xs center"
-    un-op="50%"
+    un-text="xs center slate-500"
+    un-shadow="md"
   >
     ZundaArrow TTS - Developed by
     <a

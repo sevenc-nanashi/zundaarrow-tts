@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "zuntts-standalone",
+  "productName": "zundaarrow-tts",
   "version": "0.1.0",
-  "identifier": "com.sevenc7c.zuntts-standalone",
+  "identifier": "com.sevenc7c.zundaarrow-tts",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",

@@ -47,10 +47,9 @@ task "setup:webui" do
   FileUtils::Verbose.cp_r "tmp/G2PWModel_1.1/.",
                           "#{webui_dir}/GPT-SoVITS/GPT_SoVITS/pretrained_models/G2PWModel"
 
-  FileUtils::Verbose.cp_r "./zundamon_GPT-SoVITS/GPT_weights_v2",
-                          "#{webui_dir}/GPT-SoVITS"
-  FileUtils::Verbose.cp_r "./zundamon_GPT-SoVITS/SoVITS_weights_v2",
-                          "#{webui_dir}/GPT-SoVITS"
+  FileUtils::Verbose.mkdir_p "../zundamon_speech/zundamon_GPT-SoVITS"
+  FileUtils::Verbose.cp_r "./zundamon_GPT-SoVITS/.",
+                          "../zundamon_speech/zundamon_GPT-SoVITS"
 end
 
 task "setup:python" do
@@ -96,8 +95,14 @@ task "setup:python" do
   FileUtils::Verbose.cp_r "tmp/python/.", "../zundamon_speech/standalone_python"
 
   Dir.chdir "../zundamon_speech/zundamon-speech-webui" do
+    index_url =
+      if ENV["ZTS_DEVICE"] == "cuda"
+        "https://download.pytorch.org/whl/cu121"
+      else
+        "https://download.pytorch.org/whl/cpu"
+      end
+    sh "../standalone_python/bin/python3 -m pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url #{index_url}"
     sh "../standalone_python/bin/python3 -m pip install -r requirements.txt"
-    sh "../standalone_python/bin/python3 -m pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu121"
     sh "../standalone_python/bin/python3 -m pip install -r ../server/requirements.txt"
   end
 end

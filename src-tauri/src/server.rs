@@ -1,8 +1,11 @@
 use anyhow::{Context, Result};
 use std::{path::Path, sync::Arc};
 use tap::prelude::*;
+use tokio::io::AsyncBufReadExt;
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{error, info};
+
+use crate::send_notification;
 
 pub struct ZundamonSpeechServer {
     port: u16,
@@ -12,7 +15,7 @@ pub struct ZundamonSpeechServer {
 impl ZundamonSpeechServer {
     #[tracing::instrument]
     pub async fn new(port: u16, root: &Path) -> Result<Self> {
-        let webui = root.join("webui");
+        let webui = root.join("zundamon-speech-webui");
         let server = root.join("server").join("main.py");
         let python = root
             .join("standalone_python")
@@ -28,10 +31,60 @@ impl ZundamonSpeechServer {
                 .arg(server)
                 .arg(port.to_string())
                 .env("VIRTUAL_ENV", webui.join("venv"))
+                .current_dir(webui)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
                 .tap(|cmd| info!("Starting server: {:?}", cmd))
                 .spawn()
                 .context("failed to spawn server")?,
         ));
+
+        tokio::spawn({
+            let mut process = process.lock().await;
+            let mut stdout =
+                tokio::io::BufReader::new(process.stdout.take().context("failed to get stdout")?);
+            async move {
+                loop {
+                    let mut line = String::new();
+                    if stdout
+                        .read_line(&mut line)
+                        .await
+                        .map_err(|e| {
+                            error!("failed to read server stdout: {}", e);
+                            0
+                        })
+                        .unwrap()
+                        == 0
+                    {
+                        break;
+                    }
+                    info!("server stdout: {}", line.trim());
+                }
+            }
+        });
+        tokio::spawn({
+            let mut process = process.lock().await;
+            let mut stderr =
+                tokio::io::BufReader::new(process.stderr.take().context("failed to get stderr")?);
+            async move {
+                loop {
+                    let mut line = String::new();
+                    if stderr
+                        .read_line(&mut line)
+                        .await
+                        .map_err(|e| {
+                            error!("failed to read server stderr: {}", e);
+                            0
+                        })
+                        .unwrap()
+                        == 0
+                    {
+                        break;
+                    }
+                    info!("server stderr: {}", line.trim());
+                }
+            }
+        });
 
         tokio::spawn({
             let process = Arc::clone(&process);
@@ -47,6 +100,10 @@ impl ZundamonSpeechServer {
                             .flatten()
                     } {
                         info!("server exited with status: {}", status);
+
+                        send_notification(crate::ipc::Notification::ServerExit {
+                            code: status.code().unwrap_or(1),
+                        });
                         break;
                     }
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -54,30 +111,16 @@ impl ZundamonSpeechServer {
             }
         });
 
-        for _ in 0..300 {
-            info!("Checking if port {} is open", port);
-            if !is_port_open(port) {
-                info!("Server started on port {}", port);
-                return Ok(Self { port, process });
-            }
-            if let Some(status) = {
-                process
-                    .lock()
-                    .await
-                    .try_wait()
-                    .context("failed to check server status")
-                    .ok()
-                    .flatten()
-            } {
-                anyhow::bail!("server exited with status: {}", status);
-            }
-            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        }
+        Ok(Self { port, process })
+    }
 
-        let mut process = process.lock().await;
-        process.kill().await.context("failed to kill server")?;
+    pub async fn kill(self) -> Result<()> {
+        let mut process = self.process.lock().await;
+        process.kill().await.context("failed to kill server")
+    }
 
-        anyhow::bail!("failed to start server");
+    pub async fn is_alive(&self) -> bool {
+        self.process.lock().await.try_wait().unwrap().is_none()
     }
 }
 

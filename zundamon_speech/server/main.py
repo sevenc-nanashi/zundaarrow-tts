@@ -5,11 +5,13 @@ import os
 from typing import Optional
 import soundfile as sf
 import fastapi
+from fastapi.middleware.cors import CORSMiddleware
 import pydantic
 import threading
 import sys
 import io
 import nltk
+import json
 
 nltk.download("averaged_perceptron_tagger")
 nltk.download("averaged_perceptron_tagger_eng")
@@ -23,6 +25,19 @@ sys.path.append(os.path.join(gpt_sovits_dir, "GPT_SoVITS"))
 server_dir = os.path.dirname(os.path.abspath(__file__))
 
 os.chdir(gpt_sovits_dir)
+with open("./weight.json", "w") as f:
+    json.dump(
+        {
+            "GPT": {
+                "v2": f"{server_dir}/../zundamon_GPT-SoVITS/GPT_weights_v2/zudamon_style_1-e15.ckpt"
+            },
+            "SoVITS": {
+                "v2": f"{server_dir}/../zundamon_GPT-SoVITS/SoVITS_weights_v2/zudamon_style_1_e8_s96.pth"
+            },
+        },
+        f,
+    )
+
 
 # Import your inference functions and required packages (adjust import paths as needed)
 from GPT_SoVITS.inference_webui import (
@@ -40,7 +55,7 @@ SOVITS_MODEL_PATH = os.path.join(
 )
 
 REF_AUDIO_PATH = zunspeech_dir + "/reference/reference.wav"
-REF_TEXT_PATH = zunspeech_dir + "/reference/reference.txt"
+REF_TEXT_PATH = zunspeech_dir + "/reference/ref_text.txt"
 
 REFERENCE_LANGUAGE_MAP = {
     "zh": "Chinese",
@@ -63,6 +78,14 @@ TARGET_LANGUAGE_MAP = {
 
 app = fastapi.FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:1420", "https://tauri.localhost"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 class TTSRequest(pydantic.BaseModel):
     text: str
@@ -80,17 +103,17 @@ synthesis_lock = threading.Lock()
 
 
 @app.post("/tts")
-def tts(request: fastapi.Request):
+async def tts(request: fastapi.Request):
     request_data: TTSRequest
     ref_audio: fastapi.UploadFile | None
     if request.headers.get("Content-Type") == "multipart/form-data":
         boundary = request.headers["Content-Type"].split("=")[1]
         form_data = fastapi.FormData(boundary=boundary)
-        form_data = form_data.parse(request)
+        form_data = form_data.parse(await request.body())
         request_data = TTSRequest.parse_raw(form_data["data"])
         ref_audio = form_data["ref_audio"]
     elif request.headers.get("Content-Type") == "application/json":
-        request_data = TTSRequest.parse_obj(request.json())
+        request_data = TTSRequest.parse_obj(await request.json())
         ref_audio = None
     else:
         return {"error": "Content-Type not supported"}, 400
@@ -100,15 +123,21 @@ def tts(request: fastapi.Request):
         != bool(request_data.reference_text)
         != bool(ref_audio)
     ):
-        return {
-            "error": "reference_language, reference_text, and ref_audio must be all present or all absent"
-        }, 400
+        raise fastapi.HTTPException(
+            status_code=400,
+            detail="reference_language, reference_text, and ref_audio must be all present or all absent",
+        )
 
     if request_data.target_language not in TARGET_LANGUAGE_MAP:
-        return {"error": "Invalid target_language"}, 400
+        raise fastapi.HTTPException(status_code=400, detail="Invalid target_language")
 
-    if request_data.reference_language not in REFERENCE_LANGUAGE_MAP:
-        return {"error": "Invalid reference_language"}, 400
+    if (
+        request_data.reference_language
+        and request_data.reference_language not in REFERENCE_LANGUAGE_MAP
+    ):
+        raise fastapi.HTTPException(
+            status_code=400, detail="Invalid reference_language"
+        )
 
     ref_audio_path = REF_AUDIO_PATH
     ref_text: str
@@ -148,7 +177,7 @@ def tts(request: fastapi.Request):
             output.seek(0)
             return fastapi.responses.StreamingResponse(output, media_type="audio/wav")
         else:
-            return {"error": "No audio generated"}, 500
+            raise fastapi.HTTPException(status_code=500, detail="Synthesis failed")
 
 
 if __name__ == "__main__":
