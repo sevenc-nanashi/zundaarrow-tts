@@ -65,6 +65,7 @@ REFERENCE_LANGUAGE_MAP = {
     "ko": "Korean",
 }
 TARGET_LANGUAGE_MAP = {
+    "auto": "Multilingual Mixed",
     "zh": "Chinese",
     "en": "English",
     "ja": "Japanese",

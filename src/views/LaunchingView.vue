@@ -56,7 +56,7 @@ const openFolder = async () => {
     >
     <a
       target="_blank"
-      href="https://example.com"
+      href="https://github.com/sevenc-nanashi/zundaarrow-tts#faq"
       un-items="center"
       un-flex
       un-text="sm green-600"
@@ -72,28 +72,4 @@ const openFolder = async () => {
       FAQ</a
     >
   </div>
-  <p
-    un-absolute
-    un-left="0"
-    un-right="0"
-    un-bottom="2"
-    un-text="xs center slate-500"
-    un-shadow="md"
-  >
-    ZundaArrow TTS - Developed by
-    <a
-      target="_blank"
-      href="https://sevenc7c.com"
-      un-text="#48b0d5"
-      un-underline="hover:~"
-      >Nanashi.</a
-    >, Based on Zundamon Speech by
-    <a
-      target="_blank"
-      href="https://zunko.jp"
-      un-text="green-600"
-      un-underline="hover:~"
-      >Tohoku Zunko / Zundamon Project</a
-    >.
-  </p>
 </template>

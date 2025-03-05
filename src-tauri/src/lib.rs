@@ -110,6 +110,8 @@ pub fn run() {
     tracing_subscriber::fmt::init();
 
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             launch,
@@ -127,11 +129,10 @@ pub fn run() {
         } => {
             if let Ok(mut guard) = ZUNDAMON_SPEECH_SERVER.lock() {
                 if let Some(server) = guard.take() {
-                    tokio::spawn(async move {
-                        if let Err(e) = server.kill().await {
-                            error!("Failed to kill server: {}", e);
-                        }
-                    });
+                    if let Err(e) = tauri::async_runtime::block_on(server.kill()) {
+                        error!("Failed to kill server: {}", e);
+                    }
+                    info!("Server killed");
                 }
             }
         }

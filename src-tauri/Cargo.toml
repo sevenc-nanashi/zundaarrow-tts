@@ -30,4 +30,6 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 tokio = { version = "1.43.0", features = ["full"] }
 tap = "1.0.1"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
 

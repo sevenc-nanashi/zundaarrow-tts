@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-task setup: %w[setup:clean setup:webui setup:python]
+task setup: %w[setup:clean setup:webui setup:python setup:ffmpeg]
 
 task "setup:clean" do
   require "fileutils"
@@ -104,5 +104,15 @@ task "setup:python" do
     sh "../standalone_python/bin/python3 -m pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url #{index_url}"
     sh "../standalone_python/bin/python3 -m pip install -r requirements.txt"
     sh "../standalone_python/bin/python3 -m pip install -r ../server/requirements.txt"
+  end
+end
+
+task "setup:ffmpeg" do
+  if RbConfig::CONFIG["host_os"] =~ /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+    sh "curl -Lfo tmp/ffmpeg.exe https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffmpeg.exe"
+    sh "curl -Lfo tmp/ffprobe.exe https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe"
+
+    FileUtils::Verbose.cp "tmp/ffmpeg.exe", "../zundamon_speech/zundamon-speech-webui/ffmpeg.exe"
+    FileUtils::Verbose.cp "tmp/ffprobe.exe", "../zundamon_speech/zundamon-speech-webui/ffprobe.exe"
   end
 end

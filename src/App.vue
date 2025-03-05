@@ -10,6 +10,7 @@ const zundamonImagesRaw = import.meta.glob<string>("./assets/zundamon/*.webp", {
   query: "?url",
   import: "default",
 });
+
 const zundamonImages = Object.fromEntries(
   Object.entries(zundamonImagesRaw).map(([key, value]) => [
     key.match(/\.\/assets\/zundamon\/(.+)\.webp/)![1],
@@ -58,4 +59,28 @@ onMounted(async () => {
     un-z="0"
     un-op="30%"
   />
+  <p
+    un-absolute
+    un-left="0"
+    un-right="0"
+    un-bottom="2"
+    un-text="xs center slate-500"
+    un-drop-shadow="md"
+  >
+    ZundaArrow TTS - Developed by
+    <a
+      target="_blank"
+      href="https://sevenc7c.com"
+      un-text="#48b0d5"
+      un-underline="hover:~"
+      >Nanashi.</a
+    >, Based on Zundamon Speech by
+    <a
+      target="_blank"
+      href="https://zunko.jp"
+      un-text="green-600"
+      un-underline="hover:~"
+      >Tohoku Zunko / Zundamon Project</a
+    >.
+  </p>
 </template>

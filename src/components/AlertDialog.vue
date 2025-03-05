@@ -10,10 +10,6 @@ import {
 } from "reka-ui";
 
 const open = defineModel<boolean>("open");
-
-const props = defineProps<{
-  closeOnOverlayClick?: boolean;
-}>();
 </script>
 
 <template>
@@ -26,6 +22,7 @@ const props = defineProps<{
         un-left="0"
         un-w="screen"
         un-h="screen"
+        un-z="100"
       />
       <DialogContent
         un-bg="white"
@@ -38,12 +35,12 @@ const props = defineProps<{
         un-p="4"
         un-rounded="2"
         un-shadow="md"
-        un-z="50"
+        un-z="101"
       >
         <DialogTitle un-text="lg">
           <slot name="title" />
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription un-overflow-y-auto un-max-h="[50vh]">
           <slot name="description" />
         </DialogDescription>
         <div un-flex un-justify="end">
