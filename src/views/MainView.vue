@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useServerStore } from "../stores/server";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
-import { useDialogStore } from "../stores/dialog";
+import {
+  ElNotification,
+  ElButton,
+  ElSelect,
+  ElOption,
+  ElTooltip,
+} from "element-plus";
+import { useServerStore } from "../stores/server.ts";
+import { useDialogStore } from "../stores/dialog.ts";
+import { faqUrl } from "../consts.ts";
+import { invoke } from "../invoke.ts";
+import { useRouter } from "vue-router";
 
 const serverStore = useServerStore();
 const dialogStore = useDialogStore();
 const text = ref("");
+
+const router = useRouter();
 
 const languages = [
   { label: "自動", value: "auto" },
@@ -67,21 +79,64 @@ const saveAudio = async () => {
       const buffer = await blob.arrayBuffer();
       await writeFile(path, new Uint8Array(buffer));
 
-      dialogStore.alert("保存しました", `音声を ${path} に保存しました`);
+      ElNotification({
+        title: "保存しました",
+        message: `音声を ${path} に保存しました`,
+        position: "bottom-right",
+      });
     }
   } catch (e) {
     dialogStore.alert("保存に失敗しました", String(e));
   }
 };
+
+const onEnter = (e: KeyboardEvent) => {
+  if (e.key === "Enter" && e.ctrlKey) {
+    synthesize();
+  }
+};
+
+const openFolder = async () => {
+  await invoke("open_folder");
+};
 </script>
 <template>
-  <form
-    un-w="100%"
-    un-flex="~ col"
-    un-items="center"
-    un-gap="4"
-    @submit.prevent="synthesize"
-  >
+  <nav un-absolute un-top="2" un-right="2" un-flex="~ col" un-gap="2">
+    <ElTooltip content="フォルダを開く" placement="left">
+      <ElButton circle @click="openFolder">
+        <div
+          un-i-material-symbols-folder
+          un-inline-block
+          un-w="4"
+          un-h="4"
+          un-text="sm green-600"
+        />
+      </ElButton>
+    </ElTooltip>
+    <ElTooltip content="FAQ" placement="left">
+      <ElButton circle target="_blank" :href="faqUrl" tag="a" un-ml="!0">
+        <div
+          un-i-material-symbols-help
+          un-inline-block
+          un-w="4"
+          un-h="4"
+          un-text="sm green-600"
+        />
+      </ElButton>
+    </ElTooltip>
+    <ElTooltip content="エンジンを再起動" placement="left">
+      <ElButton circle un-ml="!0" @click="router.push('/launch')">
+        <div
+          un-i-material-symbols-refresh
+          un-inline-block
+          un-w="4"
+          un-h="4"
+          un-text="sm green-600"
+        />
+      </ElButton>
+    </ElTooltip>
+  </nav>
+  <main un-w="100%" un-flex="~ col" un-items="center" un-gap="4">
     <textarea
       v-model="text"
       placeholder="ここに文章を入力するのだ！"
@@ -93,6 +148,7 @@ const saveAudio = async () => {
       un-rounded="2"
       un-shadow="md"
       un-border="1 green-600"
+      @keydown.enter="onEnter"
     />
     <div un-flex un-gap="1">
       <ElSelect v-model="language" un-w="!32" size="default">
@@ -110,6 +166,7 @@ const saveAudio = async () => {
         un-flex="~"
         un-items="center"
         :disabled="!text || state === 'synthesizing'"
+        @click.prevent="synthesize"
       >
         <div
           un-i-material-symbols-volume-up
@@ -127,6 +184,7 @@ const saveAudio = async () => {
         color="#fda5d5"
         un-flex="~"
         un-items="center"
+        un-text="!white"
         :disabled="!audioUrl || state === 'synthesizing'"
         @click.prevent="saveAudio"
       >
@@ -148,5 +206,5 @@ const saveAudio = async () => {
       <audio v-if="state === 'done' && audioUrl" :src="audioUrl" controls />
       <div v-if="state === 'error'" un-text="red-600">{{ error }}</div>
     </div>
-  </form>
+  </main>
 </template>

@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { useDialogStore } from "../stores/dialog";
-import AlertDialog from "./AlertDialog.vue";
+import { ElButton, ElDialog } from "element-plus";
 
 const dialogStore = useDialogStore();
 </script>
 <template>
-  <AlertDialog
+  <ElDialog
     v-for="dialog in dialogStore.dialogs"
     :key="dialog.nonce"
     :open="true"
-    @update:open="dialogStore.close(dialog.nonce)"
+    :title="dialog.title"
   >
-    <template #title>{{ dialog.title }}</template>
-    <template #description>{{ dialog.message }}</template>
-  </AlertDialog>
+    {{ dialog.message }}
+    <template #footer>
+      <div class="dialog-footer">
+        <ElButton type="primary" @click="dialogStore.close(dialog.nonce)">
+          閉じる
+        </ElButton>
+      </div>
+    </template>
+  </ElDialog>
 </template>

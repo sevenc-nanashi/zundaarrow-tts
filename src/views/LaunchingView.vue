@@ -4,6 +4,7 @@ import { useServerStore } from "../stores/server";
 import { invoke } from "../invoke";
 import { useDialogStore } from "../stores/dialog";
 import { useRouter } from "vue-router";
+import {faqUrl} from "../consts";
 
 const serverStore = useServerStore();
 const dialogStore = useDialogStore();
@@ -56,7 +57,7 @@ const openFolder = async () => {
     >
     <a
       target="_blank"
-      href="https://github.com/sevenc-nanashi/zundaarrow-tts#faq"
+      :href="faqUrl"
       un-items="center"
       un-flex
       un-text="sm green-600"

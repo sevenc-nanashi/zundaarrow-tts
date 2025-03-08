@@ -39,11 +39,13 @@ onMounted(async () => {
   <DialogDisplay />
   <main un-p="4" un-min-h="screen" un-relative un-z="50" un-flex="~ col">
     <RouterView v-slot="{ Component }">
-      <Transition name="fade">
-        <Component
-          :is="Component"
-          v-model:currentZundamonImage="currentZundamonImage"
-        />
+      <Transition name="page" mode="out-in">
+        <div un-flex-grow un-flex="~ col" :key="$route.fullPath">
+          <Component
+            :is="Component"
+            v-model:currentZundamonImage="currentZundamonImage"
+          />
+        </div>
       </Transition>
     </RouterView>
   </main>
@@ -84,3 +86,23 @@ onMounted(async () => {
     >.
   </p>
 </template>
+
+<style>
+.page-enter-active,
+.page-leave-active {
+  transition:
+    transform 0.3s,
+    opacity 0.3s;
+}
+
+.page-enter-from,
+.page-leave-to {
+  transform: translateY(1rem);
+
+  opacity: 0;
+
+  @media (prefers-reduced-motion) {
+    transform: none;
+  }
+}
+</style>
