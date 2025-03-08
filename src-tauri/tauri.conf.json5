@@ -23,7 +23,9 @@
     }
   },
   "bundle": {
-    "active": true,
+    // NSIS/MSIはどちらも動かない（2GB制限）ので無効化。
+    // TODO: 有効化する。
+    "active": false,
     "windows": {
       "wix": {
         "language": "ja-JP"

@@ -79,9 +79,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build
-        run: pnpm run tauri build
-
       - name: Determine information
         id: info
         uses: actions/github-script@v7
@@ -92,14 +89,24 @@ jobs:
 
             core.setOutput('version', version);
             core.setOutput('prerelease', version.includes('-'));
+            const platform = process.platform === 'win32' ? 'windows':
+              process.platform === 'darwin' ? 'macos':
+              process.platform === 'linux' ? 'linux':
+              process.platform;
+            core.setOutput('zip_name', `zundamon-speech-${version}-${platform}.7z`);
+            core.setOutput('executable_name', process.platform === 'win32' ? 'zundamon-speech.exe': 'zundamon-speech');
+
+      - name: Build
+        run: |
+          pnpm run tauri build --no-bundle
+          cd src-tauri/target/release
+          7z a -t7z -m0=lzma2 -mx=9 -mfb=64 -md=32m -ms=on -v1900m ../../../${{ steps.info.outputs.zip_name }} ${{ steps.info.outputs.executable_name }} ./zundamon-speech
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./src-tauri/target/release/bundle/appimage/*.AppImage
-            ./src-tauri/target/release/bundle/msi/*.msi
-            ./src-tauri/target/release/bundle/macos/*.app
+            ${{ steps.info.outputs.zip_name }}.*
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.info.outputs.version }}
           prerelease: ${{ steps.info.outputs.prerelease }}
