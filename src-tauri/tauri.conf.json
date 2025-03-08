@@ -24,6 +24,11 @@
   },
   "bundle": {
     "active": true,
+    "windows": {
+      "wix": {
+        "language": "ja-JP"
+      }
+    },
     "targets": ["appimage", "msi", "app"],
     "resources": {
       "../zundamon_speech": "zundamon_speech"
