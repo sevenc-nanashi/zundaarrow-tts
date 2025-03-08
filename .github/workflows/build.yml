@@ -56,6 +56,7 @@ jobs:
         id: cache
         with:
           key: ${{ steps.cache_key.outputs.cache_key }}
+          path: ./zundamon_speech
 
       - name: Setup zundamon_speech
         run: |
