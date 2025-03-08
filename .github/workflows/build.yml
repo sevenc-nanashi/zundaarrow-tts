@@ -93,7 +93,7 @@ jobs:
               process.platform === 'darwin' ? 'macos':
               process.platform === 'linux' ? 'linux':
               process.platform;
-            core.setOutput('zip_name', `zundaarrow_tts-${version}-${platform}.7z`);
+            core.setOutput('zip_name', `zundaarrow_tts-${version}-${platform}-${{ matrix.device }}.7z`);
             core.setOutput('executable_name', process.platform === 'win32' ? 'zundaarrow_tts.exe': 'zundaarrow_tts');
 
       - name: Build
