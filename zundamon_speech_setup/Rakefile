@@ -102,8 +102,20 @@ task "setup:python" do
         "https://download.pytorch.org/whl/cpu"
       end
     sh "../standalone_python/bin/python3 -m pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url #{index_url}"
+    if ENV["ZTS_DEVICE"] != "cuda"
+      requirements = File.read("requirements.txt")
+      requirements.gsub!("onnxruntime-gpu", "# onnxruntime-gpu")
+      File.write("requirements.txt", requirements)
+    end
     sh "../standalone_python/bin/python3 -m pip install -r requirements.txt"
     sh "../standalone_python/bin/python3 -m pip install -r ../server/requirements.txt"
+
+    Dir.glob("../standalone_python/lib/python3.9/site-packages/**/{*{_test.py,_test,Test},test_*}").each do |file|
+      FileUtils::Verbose.rm_r file if File.exist? file
+    end
+    Dir.glob("../standalone_python/lib/python3.9/site-packages/**/tests/**").each do |file|
+      FileUtils::Verbose.rm_r file if File.exist? file
+    end
   end
 end
 
@@ -112,7 +124,9 @@ task "setup:ffmpeg" do
     sh "curl -Lfo tmp/ffmpeg.exe https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffmpeg.exe"
     sh "curl -Lfo tmp/ffprobe.exe https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe"
 
-    FileUtils::Verbose.cp "tmp/ffmpeg.exe", "../zundamon_speech/zundamon-speech-webui/ffmpeg.exe"
-    FileUtils::Verbose.cp "tmp/ffprobe.exe", "../zundamon_speech/zundamon-speech-webui/ffprobe.exe"
+    FileUtils::Verbose.cp "tmp/ffmpeg.exe",
+                          "../zundamon_speech/zundamon-speech-webui/ffmpeg.exe"
+    FileUtils::Verbose.cp "tmp/ffprobe.exe",
+                          "../zundamon_speech/zundamon-speech-webui/ffprobe.exe"
   end
 end

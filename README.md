@@ -1,7 +1,17 @@
-# Tauri + Vanilla TS
+# ZundaArrow TTS
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+[Zundamon Speech WebUI](zundaomn-speech-webui) のラッパーです。
 
-## Recommended IDE Setup
+## インストール
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+[Releases](https://github.com/sevenc-nanashi/zundaarrow-tts/releases/latest) からお使いの環境に合ったものをダウンロードしてください。
+
+## FAQ
+
+（TODO：そのうち書く...）
+
+## ライセンス
+
+このプロジェクト自体はMIT Licenseで提供されていますが、Zundamon Speech WebUIのライセンスや生成された音声の規約については、[Zundamon Speech WebUI](zundamon-speech-webui) のリポジトリを参照してください。
+
+[zundamon-speech-webui]: https://github.com/zunzun999/zundamon-speech-webui

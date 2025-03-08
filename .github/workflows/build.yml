@@ -1,0 +1,115 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build"
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - macos-latest
+          # - ubuntu-latest
+        device: [cpu, cuda]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - name: Set up Rust
+        run: |
+          rustup toolchain install
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: ./zundamon_speech_setup
+
+      - name: Cache setup
+        id: cache_key
+        run: |
+          echo -n "cache_key=" >> $GITHUB_OUTPUT
+          echo -n ${{ runner.os }}- >> $GITHUB_OUTPUT
+          echo -n ${{ matrix.device }}- >> $GITHUB_OUTPUT
+          git submodule status | cut -d' ' -f2 | tr '\n' '-' >> $GITHUB_OUTPUT
+          echo -n "${{ hashFiles('./zundamon_speech_setup/*') }}-" >> $GITHUB_OUTPUT
+          echo ${{ github.sha }} >> $GITHUB_OUTPUT
+
+      - name: Cache restore
+        uses: actions/cache@v4
+        id: cache
+        with:
+          cache-key: ${{ steps.cache_key.outputs.cache_key }}
+
+      - name: Setup zundamon_speech
+        run: |
+          if [ -z "${{ steps.cache.outputs.cache-hit }}" ]; then
+            echo "Cache miss"
+            cd zundamon_speech_setup
+            ZTS_DEVICE=${{ matrix.device }} rake setup
+          else
+            echo "Cache hit"
+          fi
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> ./src-tauri/target"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run tauri build
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+
+      - name: Determine information
+        id: info
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = ${{ toJson(github.event.inputs.version) }};
+
+            core.setOutput('version', version);
+            core.setOutput('prerelease', version.includes('-'));
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./src-tauri/target/release/bundle/appimage/*.AppImage
+            ./src-tauri/target/release/bundle/nsis/*.exe
+            ./src-tauri/target/release/bundle/app/Contents/MacOS/*.app
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.info.outputs.version }}
+          prerelease: ${{ steps.info.outputs.prerelease }}
+          release_name: ${{ steps.info.outputs.version }}
+          draft: false

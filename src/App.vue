@@ -48,6 +48,39 @@ onMounted(async () => {
         </div>
       </Transition>
     </RouterView>
+    <p
+      un-absolute
+      un-left="0"
+      un-right="0"
+      un-bottom="2"
+      un-text="xs center slate-500"
+      un-drop-shadow="md"
+      un-pointer-events="auto"
+      un-z="10"
+    >
+      <a
+        target="_blank"
+        href="https://github.com/sevenc-nanashi/zundaarrow-tts"
+        un-text="green-600"
+        un-border="b-1 hover:green-600 transparent"
+        >ZundaArrow TTS</a
+      >
+      - Developed by
+      <a
+        target="_blank"
+        href="https://sevenc7c.com"
+        un-text="#48b0d5"
+        un-border="b-1 hover:green-600 transparent"
+        >Nanashi.</a
+      >, Based on Zundamon Speech by
+      <a
+        target="_blank"
+        href="https://zunko.jp"
+        un-text="green-600"
+        un-border="b-1 hover:green-600 transparent"
+        >Tohoku Zunko / Zundamon Project</a
+      >.
+    </p>
   </main>
   <img
     v-if="currentZundamonImage"
@@ -61,30 +94,6 @@ onMounted(async () => {
     un-z="0"
     un-op="30%"
   />
-  <p
-    un-absolute
-    un-left="0"
-    un-right="0"
-    un-bottom="2"
-    un-text="xs center slate-500"
-    un-drop-shadow="md"
-  >
-    ZundaArrow TTS - Developed by
-    <a
-      target="_blank"
-      href="https://sevenc7c.com"
-      un-text="#48b0d5"
-      un-underline="hover:~"
-      >Nanashi.</a
-    >, Based on Zundamon Speech by
-    <a
-      target="_blank"
-      href="https://zunko.jp"
-      un-text="green-600"
-      un-underline="hover:~"
-      >Tohoku Zunko / Zundamon Project</a
-    >.
-  </p>
 </template>
 
 <style>

@@ -1,6 +1,7 @@
 mod ipc;
 mod server;
 use std::sync::Arc;
+use tauri::Manager;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
@@ -46,7 +47,7 @@ async fn poll_notification() -> Result<Option<ipc::Notification>, String> {
 }
 
 #[tauri::command]
-async fn launch() -> Result<u16, String> {
+async fn launch(app: tauri::AppHandle) -> Result<u16, String> {
     let old_server = {
         let mut guard = ZUNDAMON_SPEECH_SERVER.lock().unwrap();
         guard.take()
@@ -83,11 +84,7 @@ async fn launch() -> Result<u16, String> {
             .unwrap()
             .join("zundamon_speech")
     } else {
-        process_path::get_executable_path()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("zundamon_speech")
+        app.path().resource_dir().unwrap().join("zundamon_speech")
     };
 
     let server = server::ZundamonSpeechServer::new(port, &root)
@@ -107,8 +104,6 @@ async fn launch() -> Result<u16, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tracing_subscriber::fmt::init();
-
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
@@ -120,6 +115,35 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    if cfg!(debug_assertions) {
+        tracing_subscriber::fmt::init();
+    } else {
+        let log_dir = app.path().app_log_dir().unwrap();
+        let current_time = chrono::Local::now();
+        let log_file = log_dir.join(format!(
+            "zundamon_speech_{}",
+            current_time.format("%Y-%m-%d_%H-%M-%S")
+        ));
+
+        tracing_subscriber::fmt::fmt()
+            .with_writer({
+                let log_file = log_file.clone();
+                move || {
+                    let file = std::fs::OpenOptions::new()
+                        .create(true)
+                        .write(true)
+                        .truncate(true)
+                        .open(&log_file)
+                        .unwrap();
+
+                    std::io::BufWriter::new(file)
+                }
+            })
+            .init();
+
+        info!("Logging to file: {:?}", log_file);
+    }
 
     #[allow(clippy::single_match)]
     app.run(|_app_handle, event| match event {
