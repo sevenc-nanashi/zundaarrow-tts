@@ -5,6 +5,8 @@
 }
 :root {
   font-family: "Zen Maru Gothic";
+
+  --el-color-primary: #89d78c;
 }
 
 #app {

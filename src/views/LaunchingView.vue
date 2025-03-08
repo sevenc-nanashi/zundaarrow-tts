@@ -63,7 +63,7 @@ const openFolder = async () => {
       un-border="b-1 hover:green-600 transparent"
       un-cursor="pointer"
       ><div
-        un-i-material-symbols-link
+        un-i-material-symbols-help
         un-inline-block
         un-w="4"
         un-h="4"

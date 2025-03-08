@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import SelectInput from "../components/SelectInput.vue";
 import { useServerStore } from "../stores/server";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
@@ -95,16 +94,20 @@ const saveAudio = async () => {
       un-shadow="md"
       un-border="1 green-600"
     />
-    <div un-flex un-gap="2">
-      <SelectInput :items="languages" v-model="language" un-p="x-4 y-2" />
-      <button
-        type="submit"
-        un-bg="!green-600 hover:!green-700 disabled:!green-600/50"
+    <div un-flex un-gap="1">
+      <ElSelect v-model="language" un-w="!32" size="default">
+        <ElOption
+          v-for="lang in languages"
+          :key="lang.value"
+          :value="lang.value"
+          :label="lang.label"
+        />
+      </ElSelect>
+      <span />
+      <ElButton
+        type="success"
         un-text="white"
-        un-p="x-4 y-2"
-        un-rounded="2"
         un-flex="~"
-        un-cursor="pointer disabled:not-allowed"
         un-items="center"
         :disabled="!text || state === 'synthesizing'"
       >
@@ -118,14 +121,11 @@ const saveAudio = async () => {
           un-m="r-1"
         />
         合成
-      </button>
-      <button
-        un-bg="pink-400 hover:pink-500 disabled:!pink-400/50"
-        un-text="white"
-        un-p="x-4 y-2"
-        un-rounded="2"
+      </ElButton>
+      <span />
+      <ElButton
+        color="#fda5d5"
         un-flex="~"
-        un-cursor="pointer disabled:not-allowed"
         un-items="center"
         :disabled="!audioUrl || state === 'synthesizing'"
         @click.prevent="saveAudio"
@@ -140,7 +140,7 @@ const saveAudio = async () => {
           un-m="r-1"
         />
         保存
-      </button>
+      </ElButton>
     </div>
 
     <div un-text="sm slate-500">
