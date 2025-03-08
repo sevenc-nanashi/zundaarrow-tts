@@ -19,11 +19,10 @@ impl ZundamonSpeechServer {
         let server = root.join("server").join("main.py");
         let python = root
             .join("standalone_python")
-            .join("bin")
             .join(if cfg!(windows) {
                 "python.exe"
             } else {
-                "python3"
+                "bin/python3"
             });
 
         let process = Arc::new(Mutex::new(
