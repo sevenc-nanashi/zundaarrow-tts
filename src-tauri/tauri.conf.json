@@ -24,7 +24,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["appimage", "nsis", "app"],
+    "targets": ["appimage", "msi", "app"],
     "resources": {
       "../zundamon_speech": "zundamon_speech"
     },
