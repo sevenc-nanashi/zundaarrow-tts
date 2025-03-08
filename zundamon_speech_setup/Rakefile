@@ -101,7 +101,8 @@ task "setup:python" do
       else
         "https://download.pytorch.org/whl/cpu"
       end
-    sh "../standalone_python/bin/python3 -m pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url #{index_url}"
+    python_bin = os == "windows" ? "python" : "python3"
+    sh "../standalone_python/bin/#{python_bin} -m pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url #{index_url}"
     if ENV["ZTS_DEVICE"] != "cuda"
       requirements = File.read("requirements.txt")
       requirements.gsub!("onnxruntime-gpu", "# onnxruntime-gpu")
@@ -110,12 +111,14 @@ task "setup:python" do
     sh "../standalone_python/bin/python3 -m pip install -r requirements.txt"
     sh "../standalone_python/bin/python3 -m pip install -r ../server/requirements.txt"
 
-    Dir.glob("../standalone_python/lib/python3.9/site-packages/**/{*{_test.py,_test,Test},test_*}").each do |file|
-      FileUtils::Verbose.rm_r file if File.exist? file
-    end
-    Dir.glob("../standalone_python/lib/python3.9/site-packages/**/tests/**").each do |file|
-      FileUtils::Verbose.rm_r file if File.exist? file
-    end
+    Dir
+      .glob(
+        "../standalone_python/lib/python3.9/site-packages/**/{*{_test.py,_test,Test},test_*}"
+      )
+      .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
+    Dir
+      .glob("../standalone_python/lib/python3.9/site-packages/**/tests/**")
+      .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
   end
 end
 
