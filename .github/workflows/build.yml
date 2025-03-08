@@ -16,13 +16,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
-          - macos-latest
-          # - ubuntu-latest
-        device: [cpu, cuda]
+        include:
+          - os: windows-latest
+            device: cpu
+          - os: windows-latest
+            device: cuda
+          - os: macos-latest
+            device: cpu
     runs-on: ${{ matrix.os }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
