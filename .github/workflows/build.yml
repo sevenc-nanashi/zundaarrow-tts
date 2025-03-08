@@ -36,10 +36,6 @@ jobs:
           node-version-file: .node-version
           cache: "pnpm"
 
-      - name: Set up Rust
-        run: |
-          rustup toolchain install
-
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
