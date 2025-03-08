@@ -21,8 +21,8 @@ jobs:
             device: cpu
           - os: windows-latest
             device: cuda
-          - os: macos-latest
-            device: cpu
+          # - os: macos-latest
+          #   device: cpu
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -97,9 +97,8 @@ jobs:
           files: |
             ./src-tauri/target/release/bundle/appimage/*.AppImage
             ./src-tauri/target/release/bundle/msi/*.msi
-            ./src-tauri/target/release/bundle/app/Contents/MacOS/*.app
+            ./src-tauri/target/release/bundle/macos/*.app
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.info.outputs.version }}
           prerelease: ${{ steps.info.outputs.prerelease }}
-          release_name: ${{ steps.info.outputs.version }}
           draft: false
