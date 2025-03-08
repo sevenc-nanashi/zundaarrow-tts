@@ -31,7 +31,7 @@
     },
     "targets": ["appimage", "msi", "app"],
     "resources": {
-      "../zundamon_speech": "zundamon_speech"
+      "../zundamon-speech": "zundamon-speech"
     },
     "icon": [
       "icons/32x32.png",

@@ -42,7 +42,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          working-directory: ./zundamon_speech_setup
+          working-directory: ./zundamon-speech-setup
 
       - name: Cache setup
         id: cache_key
@@ -51,7 +51,7 @@ jobs:
           echo -n ${{ runner.os }}- >> $GITHUB_OUTPUT
           echo -n ${{ matrix.device }}- >> $GITHUB_OUTPUT
           git submodule status | cut -d' ' -f2 | tr '\n' '-' >> $GITHUB_OUTPUT
-          echo -n "${{ hashFiles('./zundamon_speech_setup/*') }}-" >> $GITHUB_OUTPUT
+          echo -n "${{ hashFiles('./zundamon-speech-setup/*') }}-" >> $GITHUB_OUTPUT
           echo ${{ github.sha }} >> $GITHUB_OUTPUT
 
       - name: Cache restore
@@ -59,13 +59,13 @@ jobs:
         id: cache
         with:
           key: ${{ steps.cache_key.outputs.cache_key }}
-          path: ./zundamon_speech
+          path: ./zundamon-speech
 
-      - name: Setup zundamon_speech
+      - name: Setup zundamon-speech
         run: |
           if [ -z "${{ steps.cache.outputs.cache-hit }}" ]; then
             echo "Cache miss"
-            cd zundamon_speech_setup
+            cd zundamon-speech-setup
             ZTS_DEVICE=${{ matrix.device }} rake setup
           else
             echo "Cache hit"

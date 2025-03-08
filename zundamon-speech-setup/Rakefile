@@ -9,7 +9,7 @@ task "setup:clean" do
   FileUtils::Verbose.mkdir_p "tmp"
 
   Dir
-    .glob("../zundamon_speech/*")
+    .glob("../zundamon-speech/*")
     .each do |dir|
       next if %w[.gitkeep server].include? File.basename(dir)
 
@@ -24,7 +24,7 @@ task "setup:webui" do
   sh "curl https://paddlespeech.bj.bcebos.com/Parakeet/released_models/g2p/G2PWModel_1.1.zip -Lfo tmp/G2PWModel_1.1.zip"
   sh "unzip -o tmp/G2PWModel_1.1.zip -d tmp"
 
-  webui_dir = "../zundamon_speech/zundamon-speech-webui"
+  webui_dir = "../zundamon-speech/zundamon-speech-webui"
 
   FileUtils::Verbose.rm_rf webui_dir
   FileUtils::Verbose.mkdir_p webui_dir
@@ -47,9 +47,9 @@ task "setup:webui" do
   FileUtils::Verbose.cp_r "tmp/G2PWModel_1.1/.",
                           "#{webui_dir}/GPT-SoVITS/GPT_SoVITS/pretrained_models/G2PWModel"
 
-  FileUtils::Verbose.mkdir_p "../zundamon_speech/zundamon_GPT-SoVITS"
+  FileUtils::Verbose.mkdir_p "../zundamon-speech/zundamon_GPT-SoVITS"
   FileUtils::Verbose.cp_r "./zundamon_GPT-SoVITS/.",
-                          "../zundamon_speech/zundamon_GPT-SoVITS"
+                          "../zundamon-speech/zundamon_GPT-SoVITS"
 end
 
 task "setup:python" do
@@ -91,10 +91,10 @@ task "setup:python" do
   sh "curl -Lfo tmp/python.tar.gz #{url}"
   sh "tar -xzf tmp/python.tar.gz -C tmp"
 
-  FileUtils::Verbose.mkdir_p "../zundamon_speech/standalone_python"
-  FileUtils::Verbose.cp_r "tmp/python/.", "../zundamon_speech/standalone_python"
+  FileUtils::Verbose.mkdir_p "../zundamon-speech/standalone_python"
+  FileUtils::Verbose.cp_r "tmp/python/.", "../zundamon-speech/standalone_python"
 
-  Dir.chdir "../zundamon_speech/zundamon-speech-webui" do
+  Dir.chdir "../zundamon-speech/zundamon-speech-webui" do
     index_url =
       if ENV["ZTS_DEVICE"] == "cuda"
         "https://download.pytorch.org/whl/cu121"
@@ -128,8 +128,8 @@ task "setup:ffmpeg" do
     sh "curl -Lfo tmp/ffprobe.exe https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe"
 
     FileUtils::Verbose.cp "tmp/ffmpeg.exe",
-                          "../zundamon_speech/zundamon-speech-webui/ffmpeg.exe"
+                          "../zundamon-speech/zundamon-speech-webui/ffmpeg.exe"
     FileUtils::Verbose.cp "tmp/ffprobe.exe",
-                          "../zundamon_speech/zundamon-speech-webui/ffprobe.exe"
+                          "../zundamon-speech/zundamon-speech-webui/ffprobe.exe"
   end
 end

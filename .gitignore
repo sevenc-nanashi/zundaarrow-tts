@@ -23,8 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-zundamon_speech/*
-!zundamon_speech/.gitkeep
-!zundamon_speech/server
-zundamon_speech/server/weight.json
-zundamon_speech_setup/tmp
+zundamon-speech/*
+!zundamon-speech/.gitkeep
+!zundamon-speech/server
+zundamon-speech/server/weight.json
+zundamon-speech-setup/tmp

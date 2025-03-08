@@ -37,8 +37,8 @@ export default defineConfig(async () => ({
       // 3. tell vite to ignore watching `src-tauri`
       ignored: [
         "**/src-tauri/**",
-        "**/zundamon_speech/**",
-        "**/zundamon_speech_setup/**",
+        "**/zundamon-speech/**",
+        "**/zundamon-speech-setup/**",
       ],
     },
   },

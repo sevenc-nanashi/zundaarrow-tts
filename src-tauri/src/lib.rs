@@ -82,9 +82,9 @@ async fn launch(app: tauri::AppHandle) -> Result<u16, String> {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .unwrap()
-            .join("zundamon_speech")
+            .join("zundamon-speech")
     } else {
-        app.path().resource_dir().unwrap().join("zundamon_speech")
+        app.path().resource_dir().unwrap().join("zundamon-speech")
     };
 
     let server = server::ZundamonSpeechServer::new(port, &root)
@@ -121,10 +121,7 @@ pub fn run() {
     } else {
         let log_dir = app.path().app_log_dir().unwrap();
         let current_time = chrono::Local::now();
-        let log_file = log_dir.join(format!(
-            "zundamon_speech_{}",
-            current_time.format("%Y-%m-%d_%H-%M-%S")
-        ));
+        let log_file = log_dir.join(current_time.format("%Y-%m-%d_%H-%M-%S"));
 
         tracing_subscriber::fmt::fmt()
             .with_writer({
