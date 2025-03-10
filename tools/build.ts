@@ -9,10 +9,11 @@ if (process.argv.length < 4) {
   process.exit(1);
 }
 
+const dirname = import.meta.dirname.replaceAll("\\", "/");
 const version = process.argv[2];
 const device = process.argv[3];
 $.verbose = true;
-cd(`${import.meta.dirname}/../`);
+cd(`${dirname}/../`);
 
 await $`pnpm run tauri build`;
 
@@ -33,10 +34,10 @@ const files = [
   ...Object.values(merged.bundle.resources),
 ];
 
-const archivePath = `${import.meta.dirname}/../zundaarrow_tts-${version}-${device}.7z`;
-const metaPath = `${import.meta.dirname}/../zundaarrow_tts-${version}-${device}.meta.json`;
+const archivePath = `${dirname}/../zundaarrow_tts-${version}-${device}.7z`;
+const metaPath = `${dirname}/../zundaarrow_tts-${version}-${device}.meta.json`;
 await $({
-  cwd: `${import.meta.dirname}/../target/release`,
+  cwd: `${dirname}/../target/release`,
 })`7z a -mx=9 -mhc=false -mfb=258 -mpass=15 -v1999m -r ${archivePath} ${files}`;
 
 const list = await $`7z l ${archivePath}`.text();
