@@ -14,7 +14,7 @@ const device = process.argv[3];
 $.verbose = true;
 cd(`${import.meta.dirname}/../`);
 
-// await $`pnpm run tauri build`;
+await $`pnpm run tauri build`;
 
 const base = await fs.readFile("./src-tauri/Tauri.toml", "utf-8").then(parse);
 const patched = await fs
