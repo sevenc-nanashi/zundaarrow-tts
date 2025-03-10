@@ -6,7 +6,8 @@
   "packageManager": "pnpm@10.4.1",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node --experimental-strip-types ./tools/build.ts",
+    "build:vite": "vue-tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri"
   },
@@ -24,13 +25,21 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@actions/core": "^1.11.1",
     "@iconify-json/material-symbols": "^1.2.14",
+    "@std/toml": "npm:@jsr/std__toml@^1.0.2",
     "@tauri-apps/cli": "^2",
+    "@types/ejs": "^3.1.5",
+    "@types/node": "^22.13.10",
     "@unocss/reset": "66.1.0-beta.3",
     "@vitejs/plugin-vue": "^5.2.1",
+    "deepmerge": "^4.3.1",
+    "ejs": "^3.1.10",
     "sass-embedded": "^1.85.1",
     "typescript": "^5.8.2",
     "unocss": "66.1.0-beta.3",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vue-tsc": "^2.2.8",
+    "zx": "^8.4.0"
   }
 }

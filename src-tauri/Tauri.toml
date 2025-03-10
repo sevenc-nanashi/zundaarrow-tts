@@ -1,0 +1,35 @@
+#:schema https://schema.tauri.app/config/2
+
+productName = "zundaarrow-tts"
+version = "0.1.0"
+identifier = "com.sevenc7c.zundaarrow-tts"
+
+[build]
+beforeDevCommand = "pnpm dev"
+devUrl = "http://localhost:1420"
+beforeBuildCommand = "pnpm build:vite"
+frontendDist = "../dist"
+
+[app]
+withGlobalTauri = true
+
+[[app.windows]]
+title = "ZundaArrow TTS"
+width = 800.0
+height = 600.0
+
+[app.security]
+
+[bundle]
+active = false
+targets = ["appimage", "msi", "app"]
+icon = [
+  "icons/32x32.png",
+  "icons/128x128.png",
+  "icons/128x128@2x.png",
+  "icons/icon.icns",
+  "icons/icon.ico",
+]
+
+[bundle.windows.wix]
+language = "ja-JP"

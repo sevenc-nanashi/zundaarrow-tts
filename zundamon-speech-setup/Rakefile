@@ -117,8 +117,8 @@ task "setup:python" do
       )
       .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
     Dir
-      .glob("../standalone_python/lib/python3.9/site-packages/**/tests/**")
-      .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
+      .glob("../standalone_python/lib/python3.9/site-packages/**/tests")
+      .each { |file| FileUtils::Verbose.rm_r file }
   end
 end
 

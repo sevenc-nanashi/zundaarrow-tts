@@ -28,3 +28,5 @@ zundamon-speech/*
 !zundamon-speech/server
 zundamon-speech/server/weight.json
 zundamon-speech-setup/tmp
+
+target
