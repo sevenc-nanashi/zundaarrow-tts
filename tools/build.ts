@@ -16,7 +16,7 @@ const device = process.argv[3];
 $.verbose = true;
 cd(`${dirname}/../`);
 
-await $`pnpm run tauri build --conf ./src-tauri/tauri.conf.prod.json`;
+await $`pnpm run tauri build --config ./src-tauri/tauri.conf.prod.json`;
 
 const base = await fs.readFile("./src-tauri/Tauri.toml", "utf-8").then(parse);
 const patched = await fs
