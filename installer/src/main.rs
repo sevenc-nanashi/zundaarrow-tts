@@ -30,8 +30,9 @@ static VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
 });
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ReleaseInfo {
-    size: u64,
+    archive_size: u64,
 }
 
 #[tokio::main]
@@ -77,7 +78,7 @@ async fn main_inner(opts: Opts) -> Result<()> {
     let download_size = release_assets.iter().map(|asset| asset.size).sum::<i64>();
     let release_info = release_assets
         .iter()
-        .find(|asset| asset.name.ends_with(".json"))
+        .find(|asset| asset.name.ends_with(".meta.json"))
         .ok_or_else(|| anyhow::anyhow!("リリース情報が見つかりませんでした"))?;
 
     let release_info = reqwest::get(release_info.browser_download_url.clone())
@@ -98,7 +99,7 @@ async fn main_inner(opts: Opts) -> Result<()> {
     );
     info!(
         "解凍時のディスク使用量：{}",
-        indicatif::HumanBytes(release_info.size)
+        indicatif::HumanBytes(release_info.archive_size)
     );
     info!("インストール先：{}", install_dir.display());
 
@@ -118,10 +119,13 @@ async fn main_inner(opts: Opts) -> Result<()> {
 
     let download_map = release_assets
         .iter()
-        .map(|asset| {
+        .filter_map(|asset| {
+            if asset.name.ends_with(".meta.json") {
+                return None;
+            }
             let url = asset.browser_download_url.clone();
             let dest = install_dir.join(asset.name.clone());
-            (url, dest)
+            Some((url, dest))
         })
         .collect::<Vec<_>>();
     download_urls(download_map).await?;

@@ -1,6 +1,7 @@
 import { parse } from "@std/toml";
 import { $, cd } from "zx";
 import fs from "node:fs/promises";
+import path from "node:path";
 import deepmerge from "deepmerge";
 import { setOutput } from "@actions/core";
 
@@ -38,9 +39,9 @@ const archivePath = `${dirname}/../zundaarrow_tts-${version}-${device}.7z`;
 const metaPath = `${dirname}/../zundaarrow_tts-${version}-${device}.meta.json`;
 await $({
   cwd: `${dirname}/../target/release`,
-})`7z a -mx=9 -mhc=false -mfb=258 -mpass=15 -v1999m -r ${archivePath} ${files}`;
+})`7z a -mx=9 -mhc=false -mfb=258 -mpass=15 -v1999m -r ${path.resolve(archivePath)} ${files}`;
 
-const list = await $`7z l ${archivePath}`.text();
+const list = await $`7z l ${archivePath}.001`.text();
 // 2025-03-09 07:30:34         6518015337   3876121952  60021 files, 6769 folders
 const size = list.match(/([0-9]+) +[0-9]+ +[0-9]+ files, [0-9]+ folders/);
 if (!size) {
@@ -51,17 +52,21 @@ if (!size) {
 const archiveSize = Number.parseInt(size[1]);
 console.log(`Archive size: ${archiveSize} bytes`);
 
-const sha256 = await $`sha256sum ${archivePath}`.then((x) => x.stdout.trim());
-console.log(`SHA-256: ${sha256}`);
-
 const meta = {
   version,
   device,
   archiveSize,
-  sha256,
 };
 
 await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
 
-setOutput("archivePath", archivePath);
+const archivePaths = await fs
+  .readdir(path.dirname(archivePath))
+  .then((files) =>
+    files
+      .filter((file) => file.startsWith(path.basename(archivePath)))
+      .map((file) => path.join(path.dirname(archivePath), file)),
+  );
+
+setOutput("archivePaths", archivePaths.join("\n"));
 setOutput("metaPath", metaPath);
