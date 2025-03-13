@@ -38,19 +38,22 @@ await $({
 
 const list = await $`7z l ${archivePath}.001`.text();
 // 2025-03-09 07:30:34         6518015337   3876121952  60021 files, 6769 folders
-const size = list.match(/([0-9]+) +[0-9]+ +[0-9]+ files, [0-9]+ folders/);
+const size = list.match(
+  /(?<decompressedSize>[0-9]+) +(?<compressedSize>[0-9]+) +[0-9]+ files, [0-9]+ folders/,
+);
 if (!size) {
   console.error("Failed to get archive size");
   process.exit(1);
 }
 
-const archiveSize = Number.parseInt(size[1]);
-console.log(`Archive size: ${archiveSize} bytes`);
+const compressedSize = parseInt(size.groups!.compressedSize);
+const decompressedSize = parseInt(size.groups!.decompressedSize);
 
 const meta = {
   version,
   device,
-  archiveSize,
+  compressedSize,
+  decompressedSize,
 };
 
 await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
