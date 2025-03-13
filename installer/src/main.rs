@@ -148,6 +148,11 @@ async fn main_inner(opts: Opts) -> Result<()> {
         return Err(anyhow::anyhow!("7zrの実行に失敗しました"));
     }
 
+    tokio::fs::remove_file(szr_path).await?;
+    for asset in release_assets {
+        tokio::fs::remove_file(install_dir.join(asset.name)).await?;
+    }
+
     info!("インストールが完了しました。");
 
     Ok(())

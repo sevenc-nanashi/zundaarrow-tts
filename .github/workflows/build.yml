@@ -51,8 +51,7 @@ jobs:
           echo -n ${{ runner.os }}- >> $GITHUB_OUTPUT
           echo -n ${{ matrix.device }}- >> $GITHUB_OUTPUT
           git submodule status | cut -d' ' -f2 | tr '\n' '-' >> $GITHUB_OUTPUT
-          echo -n "${{ hashFiles('./zundamon-speech-setup/*') }}-" >> $GITHUB_OUTPUT
-          echo ${{ github.sha }} >> $GITHUB_OUTPUT
+          echo -n "${{ hashFiles('./zundamon-speech-setup/*') }}" >> $GITHUB_OUTPUT
 
       - name: Cache restore
         uses: actions/cache@v4
