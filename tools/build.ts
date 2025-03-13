@@ -16,7 +16,7 @@ const device = process.argv[3];
 $.verbose = true;
 cd(`${dirname}/../`);
 
-await $`pnpm run tauri build`;
+await $`pnpm run tauri build --conf ./src-tauri/tauri.conf.prod.json`;
 
 const base = await fs.readFile("./src-tauri/Tauri.toml", "utf-8").then(parse);
 const patched = await fs
@@ -27,11 +27,6 @@ const merged = deepmerge(base, patched) as any;
 
 const files = [
   process.platform === "win32" ? "zundaarrow_tts.exe" : "zundaarrow_tts",
-  process.platform === "win32"
-    ? "zundaarrow_tts_lib.dll"
-    : process.platform === "darwin"
-      ? "libzundaarrow_tts.dylib"
-      : "libzundaarrow_tts.so",
   ...Object.values(merged.bundle.resources),
 ];
 

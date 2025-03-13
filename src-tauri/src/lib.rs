@@ -127,6 +127,7 @@ pub fn run() {
             .with_writer({
                 let log_file = log_file.clone();
                 move || {
+                    std::fs::create_dir_all(&log_dir).unwrap();
                     let file = std::fs::OpenOptions::new()
                         .create(true)
                         .write(true)
