@@ -196,7 +196,7 @@ const openLogFolder = async () => {
       </ElButton>
       <span />
       <ElButton
-        color="#fda5d5"
+        color="#f55db9"
         un-flex="~"
         un-items="center"
         un-text="!white"

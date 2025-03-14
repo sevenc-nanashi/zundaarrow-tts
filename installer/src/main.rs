@@ -37,6 +37,9 @@ struct ReleaseInfo {
 
 #[tokio::main]
 async fn main() {
+    if enable_ansi_support::enable_ansi_support().is_err() {
+        colored::control::set_override(false);
+    }
     let result = main_inner().await;
     if let Err(ref err) = result {
         error!("エラーが発生しました：{:#?}", err);
