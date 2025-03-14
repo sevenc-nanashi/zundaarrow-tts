@@ -32,7 +32,8 @@ static VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ReleaseInfo {
-    archive_size: u64,
+    compressed_size: u64,
+    decompressed_size: u64,
 }
 
 #[tokio::main]
@@ -75,7 +76,6 @@ async fn main_inner(opts: Opts) -> Result<()> {
     info!("ハードウェア：{:?}", device);
 
     let release_assets = get_release_assets(&VERSION, device).await?;
-    let download_size = release_assets.iter().map(|asset| asset.size).sum::<i64>();
     let release_info = release_assets
         .iter()
         .find(|asset| asset.name.ends_with(".meta.json"))
@@ -94,12 +94,12 @@ async fn main_inner(opts: Opts) -> Result<()> {
     let install_dir = install_dir.path();
 
     info!(
-        "ダウンロードサイズ：{}",
-        indicatif::HumanBytes(download_size as u64)
+        "ダウンロードするファイルの容量：{}",
+        indicatif::HumanBytes(release_info.compressed_size)
     );
     info!(
         "解凍時のディスク使用量：{}",
-        indicatif::HumanBytes(release_info.archive_size)
+        indicatif::HumanBytes(release_info.decompressed_size)
     );
     info!("インストール先：{}", install_dir.display());
 
@@ -132,12 +132,12 @@ async fn main_inner(opts: Opts) -> Result<()> {
 
     info!("解凍中...");
 
-    let mut command = tokio::process::Command::new(szr_path);
+    let mut command = tokio::process::Command::new(&szr_path);
     command.arg("x");
     command.arg("-y");
     command.arg("-o").arg(install_dir);
-    for asset in release_assets {
-        command.arg(install_dir.join(asset.name));
+    for asset in &release_assets {
+        command.arg(install_dir.join(asset.name.clone()));
     }
     command.stdout(std::process::Stdio::inherit());
     command.stderr(std::process::Stdio::inherit());
@@ -174,13 +174,12 @@ async fn get_release_assets(
         .filter(|asset| {
             asset.name.contains("windows")
                 && asset.name.contains(&device.to_string().to_lowercase())
-                && asset.name.contains(".7z.")
         })
         .collect())
 }
 
 async fn download_urls(map: Vec<(reqwest::Url, std::path::PathBuf)>) -> Result<()> {
-    let mut download_progresses = Vec::new();
+    let download_progresses = indicatif::MultiProgress::new();
     let mut download_futures = Vec::new();
     let client = reqwest::Client::new();
     for (url, dest) in map {
@@ -196,7 +195,7 @@ async fn download_urls(map: Vec<(reqwest::Url, std::path::PathBuf)>) -> Result<(
         download_progress.set_length(content_length);
         download_progress.set_draw_target(indicatif::ProgressDrawTarget::stderr());
         download_progress.set_message(format!("ダウンロード中: {}", url));
-        download_progresses.push(download_progress.clone());
+        download_progresses.add(download_progress.clone());
 
         let download_future = async move {
             let mut dest_file = tokio::fs::File::create(&dest).await?;
@@ -211,10 +210,7 @@ async fn download_urls(map: Vec<(reqwest::Url, std::path::PathBuf)>) -> Result<(
     }
 
     let results = futures::future::join_all(download_futures).await;
-
-    for progress in download_progresses {
-        progress.finish();
-    }
+    download_progresses.clear()?;
 
     results.into_iter().collect::<Result<_>>()
 }

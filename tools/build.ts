@@ -30,8 +30,16 @@ const files = [
   ...Object.values(merged.bundle.resources),
 ];
 
-const archivePath = `${dirname}/../zundaarrow_tts-${version}-${device}.7z`;
-const metaPath = `${dirname}/../zundaarrow_tts-${version}-${device}.meta.json`;
+const platform =
+  process.platform === "win32"
+    ? "windows"
+    : process.platform === "darwin"
+      ? "macos"
+      : "linux";
+
+const baseName = `zundaarrow_tts-${platform}-${version}-${device}`;
+const archivePath = `${dirname}/../${baseName}.7z`;
+const metaPath = `${dirname}/../${baseName}.meta.json`;
 await $({
   cwd: `${dirname}/../target/release`,
 })`7z a -mx=9 -mfb=258 -v1999m -r ${archivePath} ${files}`;
