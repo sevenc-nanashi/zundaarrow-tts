@@ -68,6 +68,7 @@ jobs:
             ZTS_DEVICE=${{ matrix.device }} rake setup
           else
             echo "Cache hit"
+            git restore ./zundamon-speech
           fi
 
       - name: Cache Rust
