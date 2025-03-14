@@ -118,9 +118,9 @@ const openLogFolder = async () => {
       </ElButton>
     </ElTooltip>
     <ElTooltip content="ログのフォルダを開く" placement="left">
-      <ElButton circle @click="openLogFolder">
+    <ElButton circle @click="openLogFolder" un-ml="!0">
         <div
-          un-i-material-symbols-folder
+          un-i-material-symbols-monitor-heart
           un-inline-block
           un-w="4"
           un-h="4"

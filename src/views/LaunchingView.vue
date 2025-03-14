@@ -66,7 +66,7 @@ const openLogFolder = async () => {
       un-border="b-1 hover:green-600 transparent"
       un-cursor="pointer"
       ><div
-        un-i-material-symbols-folder
+        un-i-material-symbols-monitor-heart
         un-inline-block
         un-w="4"
         un-h="4"
