@@ -76,3 +76,14 @@ const archivePaths = await fs
 
 setOutput("archivePaths", archivePaths.join("\n"));
 setOutput("metaPath", metaPath);
+
+await $({ cwd: `${import.meta.dirname}/../installer` })`cargo build --release`;
+
+const suffix = process.platform === "win32" ? ".exe" : "";
+const installerPath = `${import.meta.dirname}/../${baseName}-installer${suffix}`;
+await fs.copyFile(
+  `${import.meta.dirname}/../target/release/installer${suffix}`,
+  installerPath,
+);
+
+setOutput("installerPath", installerPath);
