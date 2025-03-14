@@ -38,8 +38,9 @@ const platform =
       : "linux";
 
 const baseName = `zundaarrow_tts-${platform}-${version}-${device}`;
-const archivePath = `${dirname}/../${baseName}.7z`;
-const metaPath = `${dirname}/../${baseName}.meta.json`;
+const internalName = `__internal_${baseName}`;
+const archivePath = `${dirname}/../${internalName}.7z`;
+const metaPath = `${dirname}/../${internalName}.meta.json`;
 await $({
   cwd: `${dirname}/../target/release`,
 })`7z a -mx=9 -mfb=258 -v1999m -r ${archivePath} ${files}`;
@@ -74,9 +75,6 @@ const archivePaths = await fs
       .map((file) => path.join(path.dirname(archivePath), file)),
   );
 
-setOutput("archivePaths", archivePaths.join("\n"));
-setOutput("metaPath", metaPath);
-
 await $({
   cwd: `${import.meta.dirname}/../installer`,
   env: {
@@ -93,4 +91,11 @@ await fs.copyFile(
   installerPath,
 );
 
-setOutput("installerPath", installerPath);
+const dummyFileName = `_internal______________________________________`;
+const dummyFilePath = `${import.meta.dirname}/../${dummyFileName}`;
+await fs.writeFile(dummyFilePath, " ");
+
+setOutput(
+  "assets",
+  [...archivePaths, installerPath, metaPath, dummyFilePath].join("\n"),
+);

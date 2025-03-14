@@ -96,9 +96,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ${{ steps.build.outputs.archivePaths }}
-            ${{ steps.build.outputs.metaPath }}
-            ${{ steps.build.outputs.installerPath }}
+            ${{ steps.build.outputs.assets }}
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.info.outputs.version }}
           prerelease: ${{ steps.info.outputs.prerelease }}
