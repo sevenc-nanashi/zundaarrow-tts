@@ -96,11 +96,13 @@ async fn main_inner() -> Result<()> {
         return Ok(());
     }
 
-    let mut szr = reqwest::get("https://www.7-zip.org/a/7zr.exe").await?;
     let szr_path = install_dir.join("7zr.exe");
-    let mut szr_file = tokio::fs::File::create(&szr_path).await?;
-    while let Some(chunk) = szr.chunk().await? {
-        szr_file.write_all(&chunk).await?;
+    {
+        let mut szr = reqwest::get("https://www.7-zip.org/a/7zr.exe").await?;
+        let mut szr_file = tokio::fs::File::create(&szr_path).await?;
+        while let Some(chunk) = szr.chunk().await? {
+            szr_file.write_all(&chunk).await?;
+        }
     }
 
     let download_map = release_assets
