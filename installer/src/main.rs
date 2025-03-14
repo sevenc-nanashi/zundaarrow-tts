@@ -108,7 +108,7 @@ async fn main_inner() -> Result<()> {
     let download_map = release_assets
         .iter()
         .filter_map(|asset| {
-            if asset.name.ends_with(".meta.json") {
+            if !asset.name.contains(".7z.") {
                 return None;
             }
             let url = asset.browser_download_url.clone();
@@ -124,9 +124,11 @@ async fn main_inner() -> Result<()> {
     command.arg("x");
     command.arg("-y");
     command.arg(format!("-o{}", install_dir.display()));
-    for asset in &release_assets {
-        command.arg(install_dir.join(asset.name.clone()));
-    }
+    let first_7z = release_assets
+        .iter()
+        .find(|asset| asset.name.contains(".7z."))
+        .ok_or_else(|| anyhow::anyhow!("7zファイルが見つかりませんでした"))?;
+    command.arg(install_dir.join(first_7z.name.clone()));
     command.stdout(std::process::Stdio::inherit());
     command.stderr(std::process::Stdio::inherit());
 
@@ -138,6 +140,9 @@ async fn main_inner() -> Result<()> {
 
     tokio::fs::remove_file(szr_path).await?;
     for asset in release_assets {
+        if !asset.name.contains(".7z.") {
+            continue;
+        }
         tokio::fs::remove_file(install_dir.join(asset.name)).await?;
     }
 
@@ -157,13 +162,15 @@ async fn get_release_assets(
         .get_by_tag(version)
         .await?
         .assets;
-    Ok(assets
+    let mut assets = assets
         .into_iter()
         .filter(|asset| {
             asset.name.contains("windows")
                 && asset.name.contains(&device.to_string().to_lowercase())
         })
-        .collect())
+        .collect::<Vec<_>>();
+    assets.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(assets)
 }
 
 async fn download_urls(map: Vec<(reqwest::Url, std::path::PathBuf)>) -> Result<()> {
