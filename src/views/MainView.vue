@@ -67,8 +67,8 @@ const saveAudio = async () => {
     const path = await saveDialog({
       filters: [
         {
-          name: "My Filter",
-          extensions: ["png", "jpeg"],
+          name: "音声ファイル",
+          extensions: ["wav"],
         },
       ],
     });

@@ -25,14 +25,20 @@ sys.path.append(os.path.join(gpt_sovits_dir, "GPT_SoVITS"))
 server_dir = os.path.dirname(os.path.abspath(__file__))
 
 os.chdir(gpt_sovits_dir)
+gpt_path = (
+    f"{server_dir}/../zundamon_GPT-SoVITS/GPT_weights_v2/zudamon_style_1-e15.ckpt"
+)
+sovits_path = (
+    f"{server_dir}/../zundamon_GPT-SoVITS/SoVITS_weights_v2/zudamon_style_1_e8_s96.pth"
+)
 with open("./weight.json", "w") as f:
     json.dump(
         {
             "GPT": {
-                "v2": f"{server_dir}/../zundamon_GPT-SoVITS/GPT_weights_v2/zudamon_style_1-e15.ckpt"
+                "v2": gpt_path,
             },
             "SoVITS": {
-                "v2": f"{server_dir}/../zundamon_GPT-SoVITS/SoVITS_weights_v2/zudamon_style_1_e8_s96.pth"
+                "v2": sovits_path,
             },
         },
         f,
@@ -41,17 +47,7 @@ with open("./weight.json", "w") as f:
 
 # Import your inference functions and required packages (adjust import paths as needed)
 from GPT_SoVITS.inference_webui import (
-    change_gpt_weights,
-    change_sovits_weights,
     get_tts_wav,
-)
-
-# Fixed model file paths (please modify as needed)
-GPT_MODEL_PATH = os.path.join(
-    gpt_sovits_dir, "GPT_weights_v2", "zudamon_style_1-e15.ckpt"
-)
-SOVITS_MODEL_PATH = os.path.join(
-    gpt_sovits_dir, "SoVITS_weights_v2", "zudamon_style_1_e8_s96.pth"
 )
 
 REF_AUDIO_PATH = zunspeech_dir + "/reference/reference.wav"
@@ -157,8 +153,6 @@ async def tts(request: fastapi.Request):
             ref_audio_path = temp_audio.name
 
     with synthesis_lock:
-        change_gpt_weights(GPT_MODEL_PATH)
-        change_sovits_weights(SOVITS_MODEL_PATH)
         synthesis_result = get_tts_wav(
             ref_wav_path=ref_audio_path,
             prompt_text=ref_text,
