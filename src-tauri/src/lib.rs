@@ -144,12 +144,10 @@ pub fn run() {
             .open(&log_file)
             .unwrap();
 
-        let writer = std::io::BufWriter::new(file);
         tracing_subscriber::fmt::fmt()
             .with_max_level(tracing::Level::INFO)
             .with_ansi(false)
-            .with_env_filter("info")
-            .with_writer(std::sync::Mutex::new(writer))
+            .with_writer(file)
             .init();
 
         info!("Logging to file: {:?}", log_file);
