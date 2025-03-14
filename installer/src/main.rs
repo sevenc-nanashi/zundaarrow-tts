@@ -123,7 +123,7 @@ async fn main_inner() -> Result<()> {
     let mut command = tokio::process::Command::new(&szr_path);
     command.arg("x");
     command.arg("-y");
-    command.arg("-o").arg(install_dir);
+    command.arg(format!("-o{}", install_dir.display()));
     for asset in &release_assets {
         command.arg(install_dir.join(asset.name.clone()));
     }
