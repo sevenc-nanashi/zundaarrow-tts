@@ -105,3 +105,5 @@ jobs:
           body: |
             `-installer.exe` がインストーラーです。それ以外のファイルは通常ダウンロードする必要はありません。
 
+            CPU版：`...-cpu-installer.exe`
+            GPU版：`...-cuda-installer.exe` （CUDA対応のGPUが必要です）
