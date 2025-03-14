@@ -135,6 +135,7 @@ pub fn run() {
         tracing_subscriber::fmt::fmt()
             .with_max_level(tracing::Level::INFO)
             .with_ansi(false)
+            .with_env_filter("info")
             .with_writer({
                 let log_file = log_file.clone();
                 move || {

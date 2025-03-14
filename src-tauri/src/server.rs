@@ -17,21 +17,21 @@ impl ZundamonSpeechServer {
     pub async fn new(port: u16, root: &Path) -> Result<Self> {
         let webui = root.join("zundamon-speech-webui");
         let server = root.join("server").join("main.py");
-        let python = root
-            .join("standalone_python")
-            .join(if cfg!(windows) {
-                "pythonw.exe"
-            } else {
-                "bin/python3"
-            });
+        let python = root.join("standalone_python").join(if cfg!(windows) {
+            "pythonw.exe"
+        } else {
+            "bin/python3"
+        });
 
         let process = Arc::new(Mutex::new(
             tokio::process::Command::new(python)
                 .arg(server)
                 .arg(port.to_string())
                 .current_dir(webui)
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
+                .pipe(|cmd| {
+                    cmd.stdout(std::process::Stdio::piped())
+                        .stderr(std::process::Stdio::piped())
+                })
                 .tap(|cmd| info!("Starting server: {:?}", cmd))
                 .spawn()
                 .context("failed to spawn server")?,
