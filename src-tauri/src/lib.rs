@@ -86,14 +86,18 @@ async fn launch(app: tauri::AppHandle) -> Result<u16, String> {
         }
     };
 
-    let root = if cfg!(debug_assertions) {
+    let root = dunce::canonicalize(if cfg!(debug_assertions) {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .unwrap()
             .join("zundamon-speech")
     } else {
         app.path().resource_dir().unwrap().join("zundamon-speech")
-    };
+    })
+    .map_err(|e| {
+        error!("Failed to get root path: {}", e);
+        e.to_string()
+    })?;
 
     let server = server::ZundamonSpeechServer::new(port, &root)
         .await

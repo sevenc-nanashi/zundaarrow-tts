@@ -24,8 +24,8 @@ impl ZundamonSpeechServer {
         });
 
         let process = Arc::new(Mutex::new(
-            tokio::process::Command::new(python)
-                .arg(server)
+            tokio::process::Command::new(dunce::canonicalize(python).context("failed to canonicalize python")?)
+                .arg(dunce::canonicalize(server).context("failed to canonicalize server")?)
                 .arg(port.to_string())
                 .current_dir(webui)
                 .no_console()
