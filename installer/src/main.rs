@@ -1,5 +1,4 @@
 use std::io::Read;
-use std::str::FromStr;
 use tokio::io::AsyncWriteExt;
 mod log;
 use anyhow::Result;
@@ -15,14 +14,18 @@ enum Device {
 }
 
 static DEVICE: std::sync::LazyLock<Device> = std::sync::LazyLock::new(|| {
-    std::env::var("ZTS_DEVICE")
-        .ok()
-        .and_then(|device| Device::from_str(&device).ok())
+    #[allow(clippy::option_env_unwrap)]
+    option_env!("ZTS_DEVICE")
         .expect("デバイスが設定されていません")
+        .parse()
+        .expect("デバイスが不正です")
 });
 
 static VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
-    std::env::var("ZTS_VERSION").expect("バージョンが設定されていません")
+    #[allow(clippy::option_env_unwrap)]
+    option_env!("ZTS_VERSION")
+        .expect("バージョンが設定されていません")
+        .to_string()
 });
 
 #[derive(serde::Deserialize)]
