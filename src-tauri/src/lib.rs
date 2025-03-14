@@ -121,7 +121,7 @@ pub fn run() {
     } else {
         let log_dir = app.path().app_log_dir().unwrap();
         let current_time = chrono::Local::now();
-        let log_file = log_dir.join(current_time.format("%Y-%m-%d_%H-%M-%S").to_string());
+        let log_file = log_dir.join(current_time.format("%Y-%m-%d_%H-%M-%S.log").to_string());
 
         tracing_subscriber::fmt::fmt()
             .with_writer({

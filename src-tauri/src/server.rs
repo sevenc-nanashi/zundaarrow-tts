@@ -20,7 +20,7 @@ impl ZundamonSpeechServer {
         let python = root
             .join("standalone_python")
             .join(if cfg!(windows) {
-                "python.exe"
+                "pythonw.exe"
             } else {
                 "bin/python3"
             });
@@ -29,7 +29,6 @@ impl ZundamonSpeechServer {
             tokio::process::Command::new(python)
                 .arg(server)
                 .arg(port.to_string())
-                .env("VIRTUAL_ENV", webui.join("venv"))
                 .current_dir(webui)
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
