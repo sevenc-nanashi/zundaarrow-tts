@@ -96,14 +96,29 @@ const onEnter = (e: KeyboardEvent) => {
   }
 };
 
-const openFolder = async () => {
-  await invoke("open_folder");
+const openAppFolder = async () => {
+  await invoke("open_app_folder");
+};
+
+const openLogFolder = async () => {
+  await invoke("open_log_folder");
 };
 </script>
 <template>
   <nav un-absolute un-top="2" un-right="2" un-flex="~ col" un-gap="2">
-    <ElTooltip content="フォルダを開く" placement="left">
-      <ElButton circle @click="openFolder">
+    <ElTooltip content="アプリのフォルダを開く" placement="left">
+      <ElButton circle @click="openAppFolder">
+        <div
+          un-i-material-symbols-folder
+          un-inline-block
+          un-w="4"
+          un-h="4"
+          un-text="sm green-600"
+        />
+      </ElButton>
+    </ElTooltip>
+    <ElTooltip content="ログのフォルダを開く" placement="left">
+      <ElButton circle @click="openLogFolder">
         <div
           un-i-material-symbols-folder
           un-inline-block

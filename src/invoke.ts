@@ -2,7 +2,8 @@ import { invoke as rawInvoke } from "@tauri-apps/api/core";
 
 export type Ipc = {
   launch: () => Promise<number>;
-  open_folder: () => Promise<void>;
+  open_app_folder: () => Promise<void>;
+  open_log_folder: () => Promise<void>;
   poll_notification: () => Promise<Notification>;
 };
 export const invoke = <K extends keyof Ipc>(

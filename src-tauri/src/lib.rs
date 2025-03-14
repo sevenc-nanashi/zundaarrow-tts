@@ -26,9 +26,17 @@ pub fn send_notification(message: ipc::Notification) {
 }
 
 #[tauri::command]
-async fn open_folder() -> Result<(), String> {
+async fn open_app_folder() -> Result<(), String> {
     let path = process_path::get_executable_path().unwrap();
     let path = path.parent().unwrap();
+    info!("Opening folder: {:?}", path);
+    let _ = open::that(path);
+    Ok(())
+}
+
+#[tauri::command]
+async fn open_log_folder(app: tauri::AppHandle) -> Result<(), String> {
+    let path = app.path().app_log_dir().unwrap();
     info!("Opening folder: {:?}", path);
     let _ = open::that(path);
     Ok(())
@@ -110,7 +118,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             launch,
-            open_folder,
+            open_app_folder,
+            open_log_folder,
             poll_notification
         ])
         .build(tauri::generate_context!())
@@ -124,6 +133,8 @@ pub fn run() {
         let log_file = log_dir.join(current_time.format("%Y-%m-%d_%H-%M-%S.log").to_string());
 
         tracing_subscriber::fmt::fmt()
+            .with_max_level(tracing::Level::INFO)
+            .with_ansi(false)
             .with_writer({
                 let log_file = log_file.clone();
                 move || {

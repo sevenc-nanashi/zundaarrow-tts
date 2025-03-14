@@ -4,7 +4,7 @@ import { useServerStore } from "../stores/server";
 import { invoke } from "../invoke";
 import { useDialogStore } from "../stores/dialog";
 import { useRouter } from "vue-router";
-import {faqUrl} from "../consts";
+import { faqUrl } from "../consts";
 
 const serverStore = useServerStore();
 const dialogStore = useDialogStore();
@@ -26,8 +26,11 @@ onMounted(async () => {
   router.push("/main");
 });
 
-const openFolder = async () => {
-  await invoke("open_folder");
+const openAppFolder = async () => {
+  await invoke("open_app_folder");
+};
+const openLogFolder = async () => {
+  await invoke("open_log_folder");
 };
 </script>
 <template>
@@ -40,7 +43,7 @@ const openFolder = async () => {
   >
     <p un-text="lg">起動中...</p>
     <a
-      @click="openFolder"
+      @click="openAppFolder"
       un-items="center"
       un-flex
       un-text="sm green-600"
@@ -53,7 +56,23 @@ const openFolder = async () => {
         un-h="4"
         un-m="r-1"
       />
-      フォルダを開く</a
+      アプリのフォルダを開く</a
+    >
+    <a
+      @click="openLogFolder"
+      un-items="center"
+      un-flex
+      un-text="sm green-600"
+      un-border="b-1 hover:green-600 transparent"
+      un-cursor="pointer"
+      ><div
+        un-i-material-symbols-folder
+        un-inline-block
+        un-w="4"
+        un-h="4"
+        un-m="r-1"
+      />
+      ログのフォルダを開く</a
     >
     <a
       target="_blank"
