@@ -108,8 +108,8 @@ task "setup:python" do
       requirements.gsub!("onnxruntime-gpu", "# onnxruntime-gpu")
       File.write("requirements.txt", requirements)
     end
-    sh "../standalone_python/#{python_bin} -m pip install -r requirements.txt"
-    sh "../standalone_python/#{python_bin} -m pip install -r ../server/requirements.txt"
+    sh "../standalone_python/#{python_bin} -m pip install -r requirements.txt --no-compile --no-cache-dir"
+    sh "../standalone_python/#{python_bin} -m pip install -r ../server/requirements.txt --no-compile --no-cache-dir"
 
     lib_root =
       (
