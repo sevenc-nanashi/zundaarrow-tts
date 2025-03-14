@@ -1,29 +1,25 @@
 use std::io::Read;
+use std::str::FromStr;
 use tokio::io::AsyncWriteExt;
 mod log;
 use anyhow::Result;
-use clap::Parser;
 use colored::Colorize;
-use strum::IntoEnumIterator;
 
-#[derive(
-    clap::ValueEnum, Debug, Copy, Clone, Default, PartialEq, strum::Display, strum::EnumIter,
-)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, strum::Display, strum::EnumString)]
 enum Device {
-    #[clap(name = "cpu")]
-    #[strum(to_string = "CPU")]
+    #[strum(to_string = "CPU", ascii_case_insensitive)]
     #[default]
     Cpu,
-    #[clap(name = "cuda")]
-    #[strum(to_string = "CUDA")]
+    #[strum(to_string = "CUDA", ascii_case_insensitive)]
     Cuda,
 }
 
-#[derive(clap::Parser, Debug)]
-struct Opts {
-    #[clap(short, long)]
-    device: Option<Device>,
-}
+static DEVICE: std::sync::LazyLock<Device> = std::sync::LazyLock::new(|| {
+    std::env::var("ZTS_DEVICE")
+        .ok()
+        .and_then(|device| Device::from_str(&device).ok())
+        .expect("デバイスが設定されていません")
+});
 
 static VERSION: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
     std::env::var("ZTS_VERSION").expect("バージョンが設定されていません")
@@ -38,8 +34,7 @@ struct ReleaseInfo {
 
 #[tokio::main]
 async fn main() {
-    let opts: Opts = Opts::parse();
-    let result = main_inner(opts).await;
+    let result = main_inner().await;
     if let Err(ref err) = result {
         error!("エラーが発生しました：{:#?}", err);
     }
@@ -50,7 +45,7 @@ async fn main() {
     std::process::exit(result.is_err() as i32);
 }
 
-async fn main_inner(opts: Opts) -> Result<()> {
+async fn main_inner() -> Result<()> {
     let standard_font = figlet_rs::FIGfont::standard().unwrap();
     let figure = standard_font.convert("ZundaArrow TTS").unwrap();
     println!("{}", figure.to_string().trim_end().green());
@@ -61,16 +56,7 @@ async fn main_inner(opts: Opts) -> Result<()> {
         "Tohoku Zunko / Zundamon Project".green()
     );
     println!();
-    let device = opts.device.unwrap_or_else(|| {
-        let items = Device::iter().collect::<Vec<_>>();
-        let index = dialoguer::Select::new()
-            .with_prompt("ハードウェアアクセラレーションを選択してください")
-            .items(&items)
-            .default(0)
-            .interact()
-            .unwrap();
-        items[index]
-    });
+    let device = *DEVICE;
 
     info!("バージョン：{}", &VERSION.clone());
     info!("ハードウェア：{:?}", device);

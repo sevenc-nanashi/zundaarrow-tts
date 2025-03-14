@@ -77,7 +77,14 @@ const archivePaths = await fs
 setOutput("archivePaths", archivePaths.join("\n"));
 setOutput("metaPath", metaPath);
 
-await $({ cwd: `${import.meta.dirname}/../installer` })`cargo build --release`;
+await $({
+  cwd: `${import.meta.dirname}/../installer`,
+  env: {
+    ...process.env,
+    ZTS_VERSION: version,
+    ZTS_DEVICE: device,
+  },
+})`cargo build --release`;
 
 const suffix = process.platform === "win32" ? ".exe" : "";
 const installerPath = `${import.meta.dirname}/../${baseName}-installer${suffix}`;
