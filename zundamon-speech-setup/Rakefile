@@ -111,25 +111,25 @@ task "setup:python" do
     sh "../standalone_python/#{python_bin} -m pip install -r requirements.txt"
     sh "../standalone_python/#{python_bin} -m pip install -r ../server/requirements.txt"
 
-    site_packages =
+    lib_root =
       (
         if os == "windows"
-          "../standalone_python/Lib/site-packages"
+          "../standalone_python/Lib"
         else
-          "../standalone_python/lib/python3.9/site-packages"
+          "../standalone_python/lib/python3.9"
         end
       )
     Dir
-      .glob("#{site_packages}/**/{*{_test.py,_test,Test},test_*}")
+      .glob("#{lib_root}/**/{*{_test.py,_test,Test},test_*}")
       .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
     Dir
-      .glob("#{site_packages}/**/*.{pyc,h,cpp,c}")
+      .glob("#{lib_root}/**/*.{pyc,h,cpp,c}")
       .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
     Dir
-      .glob("#{site_packages}/__pycache__")
+      .glob("#{lib_root}/__pycache__")
       .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
     Dir
-      .glob("#{site_packages}/**/tests")
+      .glob("#{lib_root}/**/tests")
       .each { |file| FileUtils::Verbose.rm_r file }
   end
 end
