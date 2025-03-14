@@ -136,24 +136,20 @@ pub fn run() {
         let current_time = chrono::Local::now();
         let log_file = log_dir.join(current_time.format("%Y-%m-%d_%H-%M-%S.log").to_string());
 
+        std::fs::create_dir_all(&log_dir).unwrap();
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&log_file)
+            .unwrap();
+
+        let writer = std::io::BufWriter::new(file);
         tracing_subscriber::fmt::fmt()
             .with_max_level(tracing::Level::INFO)
             .with_ansi(false)
             .with_env_filter("info")
-            .with_writer({
-                let log_file = log_file.clone();
-                move || {
-                    std::fs::create_dir_all(&log_dir).unwrap();
-                    let file = std::fs::OpenOptions::new()
-                        .create(true)
-                        .write(true)
-                        .truncate(true)
-                        .open(&log_file)
-                        .unwrap();
-
-                    std::io::BufWriter::new(file)
-                }
-            })
+            .with_writer(std::sync::Mutex::new(writer))
             .init();
 
         info!("Logging to file: {:?}", log_file);
