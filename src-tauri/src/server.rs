@@ -18,7 +18,7 @@ impl ZundamonSpeechServer {
         let webui = root.join("zundamon-speech-webui");
         let server = root.join("server").join("main.py");
         let python = root.join("standalone_python").join(if cfg!(windows) {
-            "pythonw.exe"
+            "python.exe"
         } else {
             "bin/python3"
         });
@@ -28,10 +28,9 @@ impl ZundamonSpeechServer {
                 .arg(server)
                 .arg(port.to_string())
                 .current_dir(webui)
-                .pipe(|cmd| {
-                    cmd.stdout(std::process::Stdio::piped())
-                        .stderr(std::process::Stdio::piped())
-                })
+                .no_console()
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
                 .tap(|cmd| info!("Starting server: {:?}", cmd))
                 .spawn()
                 .context("failed to spawn server")?,
@@ -130,5 +129,16 @@ pub fn available_port() -> std::io::Result<u16> {
     match std::net::TcpListener::bind("localhost:0") {
         Ok(listener) => Ok(listener.local_addr().unwrap().port()),
         Err(e) => Err(e),
+    }
+}
+
+#[easy_ext::ext]
+impl tokio::process::Command {
+    pub fn no_console(&mut self) -> &mut Self {
+        #[cfg(windows)]
+        {
+            self.creation_flags(0x08000000);
+        }
+        self
     }
 }
