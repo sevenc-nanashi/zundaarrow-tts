@@ -126,7 +126,11 @@ pub fn run() {
         .expect("error while running tauri application");
 
     if cfg!(debug_assertions) {
-        tracing_subscriber::fmt::init();
+        tracing_subscriber::fmt::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .with_ansi(true)
+            .with_env_filter("debug")
+            .init();
     } else {
         let log_dir = app.path().app_log_dir().unwrap();
         let current_time = chrono::Local::now();

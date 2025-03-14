@@ -8,7 +8,7 @@ const dialogStore = useDialogStore();
   <ElDialog
     v-for="dialog in dialogStore.dialogs"
     :key="dialog.nonce"
-    :open="true"
+    :modelValue="true"
     :title="dialog.title"
   >
     {{ dialog.message }}
