@@ -1,6 +1,6 @@
 # ZundaArrow TTS
 
-[Zundamon Speech WebUI](zundaomn-speech-webui) のラッパーです。
+[Zundamon Speech WebUI][zundamon-speech-webui] のラッパーです。
 
 ## インストール
 
@@ -12,6 +12,6 @@
 
 ## ライセンス
 
-このプロジェクト自体はMIT Licenseで提供されていますが、Zundamon Speech WebUIのライセンスや生成された音声の規約については、[Zundamon Speech WebUI](zundamon-speech-webui) のリポジトリを参照してください。
+このプロジェクト自体はMIT Licenseで提供されていますが、Zundamon Speech WebUIのライセンスや生成された音声の規約については、[Zundamon Speech WebUI][zundamon-speech-webui] のリポジトリを参照してください。
 
 [zundamon-speech-webui]: https://github.com/zunzun999/zundamon-speech-webui
