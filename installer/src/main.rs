@@ -171,17 +171,15 @@ async fn download_urls(map: Vec<(reqwest::Url, std::path::PathBuf)>) -> Result<(
     for (url, dest) in map {
         let mut response = client.get(url.clone()).send().await?;
         let content_length = response.content_length().unwrap_or(0);
-        let download_progress = indicatif::ProgressBar::new(content_length);
+        let download_progress =
+            download_progresses.add(indicatif::ProgressBar::new(content_length));
         download_progress.set_style(
             indicatif::ProgressStyle::default_bar()
                 .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
                 .progress_chars("#>-"),
         );
-        download_progress.set_position(0);
         download_progress.set_length(content_length);
-        download_progress.set_draw_target(indicatif::ProgressDrawTarget::stderr());
         download_progress.set_message(format!("ダウンロード中: {}", url));
-        download_progresses.add(download_progress.clone());
 
         let download_future = async move {
             let mut dest_file = tokio::fs::File::create(&dest).await?;
