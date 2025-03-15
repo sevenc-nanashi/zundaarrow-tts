@@ -119,9 +119,9 @@ task "setup:python" do
           "../standalone_python/lib/python3.9"
         end
       )
-    Dir
-      .glob("#{lib_root}/**/{*{_test.py,_test,Test},test_*}")
-      .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
+
+    FileUtils::Verbose.rm_rf "#{lib_root}/share/jupyter"
+    FileUtils::Verbose.rm_rf "#{lib_root}/ensurepip"
     Dir
       .glob("#{lib_root}/**/*.{pyc,h,cpp,c}")
       .each { |file| FileUtils::Verbose.rm_r file if File.exist? file }
@@ -131,6 +131,22 @@ task "setup:python" do
     Dir
       .glob("#{lib_root}/**/tests")
       .each { |file| FileUtils::Verbose.rm_r file }
+
+    scripts_root =
+      (
+        if os == "windows"
+          "../standalone_python/Scripts"
+        else
+          "../standalone_python/bin"
+        end
+      )
+
+    files = Dir.glob("#{scripts_root}/*")
+    files.reject! do |file|
+      file.include?("python")
+    end
+
+    FileUtils::Verbose.rm_rf files
   end
 end
 

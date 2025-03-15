@@ -2,7 +2,7 @@ import {
   defineConfig,
   presetAttributify,
   presetIcons,
-  presetWind3,
+  presetWind4,
   transformerDirectives,
 } from "unocss";
 
@@ -11,7 +11,7 @@ export default defineConfig({
     presetAttributify({
       prefixedOnly: true,
     }),
-    presetWind3(),
+    presetWind4(),
     presetIcons(),
   ],
   transformers: [transformerDirectives()],

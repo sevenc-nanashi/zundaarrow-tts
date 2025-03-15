@@ -15,7 +15,9 @@ name = "zundaarrow_tts_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
+anyhow = "1.0.97"
 tauri-build = { version = "2", features = ["config-toml"] }
+vergen-gitcl = { version = "1.0.5", features = ["rustc", "build"] }
 
 [dependencies]
 tauri = { version = "2", features = ["config-toml"] }

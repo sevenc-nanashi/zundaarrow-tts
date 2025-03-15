@@ -10,6 +10,8 @@ use crate::send_notification;
 pub struct ZundamonSpeechServer {
     port: u16,
     process: Arc<Mutex<tokio::process::Child>>,
+
+    intentionally_killed: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl ZundamonSpeechServer {
@@ -23,17 +25,21 @@ impl ZundamonSpeechServer {
             "bin/python3"
         });
 
+        let intentionally_killed = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+
         let process = Arc::new(Mutex::new(
-            tokio::process::Command::new(dunce::canonicalize(python).context("failed to canonicalize python")?)
-                .arg(dunce::canonicalize(server).context("failed to canonicalize server")?)
-                .arg(port.to_string())
-                .current_dir(webui)
-                .no_console()
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
-                .tap(|cmd| info!("Starting server: {:?}", cmd))
-                .spawn()
-                .context("failed to spawn server")?,
+            tokio::process::Command::new(
+                dunce::canonicalize(python).context("failed to canonicalize python")?,
+            )
+            .arg(dunce::canonicalize(server).context("failed to canonicalize server")?)
+            .arg(port.to_string())
+            .current_dir(webui)
+            .no_console()
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .tap(|cmd| info!("Starting server: {:?}", cmd))
+            .spawn()
+            .context("failed to spawn server")?,
         ));
 
         tokio::spawn({
@@ -85,6 +91,7 @@ impl ZundamonSpeechServer {
 
         tokio::spawn({
             let process = Arc::clone(&process);
+            let intentionally_killed = intentionally_killed.clone();
             async move {
                 loop {
                     if let Some(status) = {
@@ -97,10 +104,15 @@ impl ZundamonSpeechServer {
                             .flatten()
                     } {
                         info!("server exited with status: {}", status);
+                        if intentionally_killed.load(std::sync::atomic::Ordering::Relaxed) {
+                            info!("server was intentionally killed");
+                        } else {
+                            error!("server was killed unexpectedly");
+                            send_notification(crate::ipc::Notification::ServerExit {
+                                code: status.code().unwrap_or(1),
+                            });
+                        }
 
-                        send_notification(crate::ipc::Notification::ServerExit {
-                            code: status.code().unwrap_or(1),
-                        });
                         break;
                     }
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -108,12 +120,21 @@ impl ZundamonSpeechServer {
             }
         });
 
-        Ok(Self { port, process })
+        Ok(Self {
+            port,
+            process,
+            intentionally_killed,
+        })
     }
 
     pub async fn kill(self) -> Result<()> {
         let mut process = self.process.lock().await;
-        process.kill().await.context("failed to kill server")
+        process.kill().await.context("failed to kill server")?;
+
+        self.intentionally_killed
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+
+        Ok(())
     }
 
     pub async fn is_alive(&self) -> bool {

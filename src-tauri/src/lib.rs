@@ -55,6 +55,19 @@ async fn poll_notification() -> Result<Option<ipc::Notification>, String> {
 }
 
 #[tauri::command]
+async fn app_info() -> Result<serde_json::Value, String> {
+    let app_info = serde_json::json!({
+        "version": option_env!("ZTS_VERSION").unwrap_or("0.0.0").to_string(),
+        "device": option_env!("ZTS_DEVICE").unwrap_or("unknown").to_string(),
+        "buildTimestamp": env!("VERGEN_BUILD_TIMESTAMP").to_string(),
+        "commitSha": env!("VERGEN_GIT_SHA").to_string(),
+        "rustcVersion": env!("VERGEN_RUSTC_SEMVER").to_string(),
+    });
+
+    Ok(app_info)
+}
+
+#[tauri::command]
 async fn launch(app: tauri::AppHandle) -> Result<u16, String> {
     let old_server = {
         let mut guard = ZUNDAMON_SPEECH_SERVER.lock().unwrap();
@@ -121,6 +134,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            app_info,
             launch,
             open_app_folder,
             open_log_folder,

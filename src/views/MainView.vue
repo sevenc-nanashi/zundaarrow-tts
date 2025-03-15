@@ -7,19 +7,14 @@ import {
   ElButton,
   ElSelect,
   ElOption,
-  ElTooltip,
 } from "element-plus";
+import MainToolbar from "../components/MainToolbar.vue";
 import { useServerStore } from "../stores/server.ts";
 import { useDialogStore } from "../stores/dialog.ts";
-import { faqUrl, termsUrl } from "../consts.ts";
-import { invoke } from "../invoke.ts";
-import { useRouter } from "vue-router";
 
 const serverStore = useServerStore();
 const dialogStore = useDialogStore();
 const text = ref("");
-
-const router = useRouter();
 
 const languages = [
   { label: "自動", value: "auto" },
@@ -95,73 +90,9 @@ const onEnter = (e: KeyboardEvent) => {
     synthesize();
   }
 };
-
-const openAppFolder = async () => {
-  await invoke("open_app_folder");
-};
-
-const openLogFolder = async () => {
-  await invoke("open_log_folder");
-};
 </script>
 <template>
-  <nav un-absolute un-top="2" un-right="2" un-flex="~ col" un-gap="2">
-    <ElTooltip content="アプリのフォルダを開く" placement="left">
-      <ElButton circle @click="openAppFolder">
-        <div
-          un-i-material-symbols-folder
-          un-inline-block
-          un-w="4"
-          un-h="4"
-          un-text="sm green-600"
-        />
-      </ElButton>
-    </ElTooltip>
-    <ElTooltip content="ログのフォルダを開く" placement="left">
-      <ElButton circle @click="openLogFolder" un-ml="!0">
-        <div
-          un-i-material-symbols-monitor-heart
-          un-inline-block
-          un-w="4"
-          un-h="4"
-          un-text="sm green-600"
-        />
-      </ElButton>
-    </ElTooltip>
-    <ElTooltip content="FAQ" placement="left">
-      <ElButton circle target="_blank" :href="faqUrl" tag="a" un-ml="!0">
-        <div
-          un-i-material-symbols-help
-          un-inline-block
-          un-w="4"
-          un-h="4"
-          un-text="sm green-600"
-        />
-      </ElButton>
-    </ElTooltip>
-    <ElTooltip content="利用規約" placement="left">
-      <ElButton circle target="_blank" :href="termsUrl" un-ml="!0">
-        <div
-          un-i-material-symbols-balance
-          un-inline-block
-          un-w="4"
-          un-h="4"
-          un-text="sm green-600"
-        />
-      </ElButton>
-    </ElTooltip>
-    <ElTooltip content="エンジンを再起動" placement="left">
-      <ElButton circle un-ml="!0" @click="router.push('/launch')">
-        <div
-          un-i-material-symbols-refresh
-          un-inline-block
-          un-w="4"
-          un-h="4"
-          un-text="sm green-600"
-        />
-      </ElButton>
-    </ElTooltip>
-  </nav>
+  <MainToolbar />
   <main un-w="100%" un-flex="~ col" un-items="center" un-gap="4">
     <textarea
       v-model="text"

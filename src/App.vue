@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { RouterView } from "vue-router";
-import { invoke } from "./invoke";
+import { AppInfo, invoke } from "./invoke";
 import DialogDisplay from "./components/DialogDisplay.vue";
 import { useDialogStore } from "./stores/dialog";
 
@@ -21,7 +21,10 @@ const zundamonImages = Object.fromEntries(
 const dialogStore = useDialogStore();
 const currentZundamonImage = ref<"sleeping" | null>("sleeping");
 
+const appInfo = ref<AppInfo | undefined>(undefined);
+
 onMounted(async () => {
+  appInfo.value = await invoke("app_info");
   while (true) {
     const notification = await invoke("poll_notification");
     switch (notification.type) {
@@ -65,6 +68,7 @@ onMounted(async () => {
         un-border="b-1 hover:green-600 transparent"
         >ZundaArrow TTS</a
       >
+      v{{ appInfo?.version || "..." }}
       - Developed by
       <a
         target="_blank"

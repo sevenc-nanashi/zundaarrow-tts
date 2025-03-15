@@ -6,7 +6,7 @@ export type Dialog = {
 };
 
 type InternalDialog = Dialog & {
-  nonce: number;
+  nonce: string;
 };
 
 export const useDialogStore = defineStore("dialog", {
@@ -16,9 +16,9 @@ export const useDialogStore = defineStore("dialog", {
 
   actions: {
     alert(title: string, message: string) {
-      this.dialogs.push({ title, message, nonce: Math.random() });
+      this.dialogs.push({ title, message, nonce: Math.random().toString() });
     },
-    close(nonce: number) {
+    close(nonce: string) {
       this.dialogs = this.dialogs.filter((dialog) => dialog.nonce !== nonce);
     }
   },
