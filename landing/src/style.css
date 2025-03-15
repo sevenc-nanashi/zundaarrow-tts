@@ -1,0 +1,18 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+:root {
+  font-family: "Zen Maru Gothic";
+  background: linear-gradient(in srgb 135deg, #f5fff5, #fff5ff);
+
+  --el-color-primary: #89d78c;
+}
+
+#app {
+  min-height: 100vh;
+  position: relative;
+
+  align-content: center;
+}

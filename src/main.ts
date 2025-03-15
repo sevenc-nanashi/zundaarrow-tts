@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import "@fontsource/zen-maru-gothic";
+import "@fontsource/zen-maru-gothic/index.css";
 import "virtual:uno.css";
 import { createPinia } from "pinia";
 import ElementPlus from "element-plus";
