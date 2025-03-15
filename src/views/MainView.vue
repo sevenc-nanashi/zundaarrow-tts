@@ -11,7 +11,7 @@ import {
 } from "element-plus";
 import { useServerStore } from "../stores/server.ts";
 import { useDialogStore } from "../stores/dialog.ts";
-import { faqUrl } from "../consts.ts";
+import { faqUrl, termsUrl } from "../consts.ts";
 import { invoke } from "../invoke.ts";
 import { useRouter } from "vue-router";
 
@@ -132,6 +132,17 @@ const openLogFolder = async () => {
       <ElButton circle target="_blank" :href="faqUrl" tag="a" un-ml="!0">
         <div
           un-i-material-symbols-help
+          un-inline-block
+          un-w="4"
+          un-h="4"
+          un-text="sm green-600"
+        />
+      </ElButton>
+    </ElTooltip>
+    <ElTooltip content="利用規約" placement="left">
+      <ElButton circle target="_blank" :href="termsUrl" un-ml="!0">
+        <div
+          un-i-material-symbols-balance
           un-inline-block
           un-w="4"
           un-h="4"
