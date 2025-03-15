@@ -142,9 +142,7 @@ task "setup:python" do
       )
 
     files = Dir.glob("#{scripts_root}/*")
-    files.reject! do |file|
-      file.include?("python")
-    end
+    files.reject! { |file| File.basename(file).include? "python" }
 
     FileUtils::Verbose.rm_rf files
   end
