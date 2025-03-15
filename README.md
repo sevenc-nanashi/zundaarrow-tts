@@ -8,7 +8,16 @@
 
 ## FAQ
 
-（TODO：そのうち書く...）
+### アンインストールをしたい
+
+以下のフォルダを削除してください：
+
+- インストール先
+- `%LOCALAPPDATA%\com.sevenc7c.zundaarrow-tts`
+
+### ログを確認したい
+
+`%LOCALAPPDATA%\com.sevenc7c.zundaarrow-tts\logs` にログが保存されています。
 
 ## ライセンス
 
