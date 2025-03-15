@@ -10,11 +10,12 @@ const dialogStore = useDialogStore();
     :key="dialog.nonce"
     :modelValue="true"
     :title="dialog.title"
+    alignCenter
   >
     {{ dialog.message }}
     <template #footer>
       <div class="dialog-footer">
-        <ElButton type="primary" @click="dialogStore.close(dialog.nonce)">
+        <ElButton type="success" @click="dialogStore.close(dialog.nonce)">
           閉じる
         </ElButton>
       </div>
