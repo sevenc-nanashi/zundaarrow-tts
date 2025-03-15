@@ -44,7 +44,7 @@ onMounted(() => {
     un-translate-y="-1/2"
     un-z="0"
     un-opacity="50"
-    un-filter="blur-2"
+    un-shadow="lg"
   >
     <img :src="windowSrc" un-h="50vh" />
   </div>
