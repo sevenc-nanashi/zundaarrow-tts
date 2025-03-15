@@ -30,7 +30,7 @@ onMounted(() => {
         (asset: any) =>
           asset.downloadUrl.includes("cuda") &&
           asset.downloadUrl.endsWith(".exe"),
-      )?.browser_download_url,
+      )?.downloadUrl,
     };
   });
 });
