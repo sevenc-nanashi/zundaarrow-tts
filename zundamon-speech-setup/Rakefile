@@ -154,8 +154,8 @@ task "setup:ffmpeg" do
     sh "curl -Lfo tmp/ffprobe.exe https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe"
 
     FileUtils::Verbose.cp "tmp/ffmpeg.exe",
-                          "../zundamon-speech/zundamon-speech-webui/GPT_SoVITS/ffmpeg.exe"
+                          "../zundamon-speech/zundamon-speech-webui/GPT-SoVITS/ffmpeg.exe"
     FileUtils::Verbose.cp "tmp/ffprobe.exe",
-                          "../zundamon-speech/zundamon-speech-webui/GPT_SoVITS/ffprobe.exe"
+                          "../zundamon-speech/zundamon-speech-webui/GPT-SoVITS/ffprobe.exe"
   end
 end
