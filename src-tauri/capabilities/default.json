@@ -8,8 +8,7 @@
     "opener:default",
     "dialog:default",
     {
-      "identifier": "fs:allow-write"
+      "identifier": "fs:allow-write-file"
     }
   ]
 }
-
