@@ -1,38 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import windowSrc from "./assets/zundaarrow.webp?format=webp&imagetools";
 import { ElButton } from "element-plus";
 
-const releaseData = ref<
-  | {
-      version: string;
-      cpu: string;
-      cuda: string;
-    }
-  | undefined
->(undefined);
-
+const version = "0.1.1";
+const cpuUrl = `https://github.com/sevenc-nanashi/zundaarrow-tts/releases/download/${version}/zundaarrow_tts-windows-${version}-cpu-installer.exe`;
+const cudaUrl = `https://github.com/sevenc-nanashi/zundaarrow-tts/releases/download/${version}/zundaarrow_tts-windows-${version}-cuda-installer.exe`;
 onMounted(() => {
   import("../node_modules/budoux/module/webcomponents/budoux-ja.js");
-
-  fetch(
-    "https://ungh.cc/repos/sevenc-nanashi/zundaarrow-tts/releases/latest",
-  ).then(async (res) => {
-    const data = await res.json();
-    releaseData.value = {
-      version: data.release.name,
-      cpu: data.release.assets.find(
-        (asset: any) =>
-          asset.downloadUrl.includes("cpu") &&
-          asset.downloadUrl.endsWith(".exe"),
-      )?.downloadUrl,
-      cuda: data.release.assets.find(
-        (asset: any) =>
-          asset.downloadUrl.includes("cuda") &&
-          asset.downloadUrl.endsWith(".exe"),
-      )?.downloadUrl,
-    };
-  });
 });
 </script>
 
@@ -77,26 +52,14 @@ onMounted(() => {
 
     <h2 un-text="2xl green-600" un-relative un-z="10">最新リリース</h2>
     <p>
-      最新バージョン：<span un-text="green-600">{{
-        releaseData?.version || "取得中..."
-      }}</span>
+      最新バージョン：<span un-text="green-600">{{ version }}</span>
     </p>
 
     <div>
-      <ElButton
-        :disabled="!releaseData"
-        :href="releaseData?.cpu"
-        target="_blank"
-        rel="noopener"
-        tag="a"
+      <ElButton :href="cpuUrl" target="_blank" rel="noopener" tag="a"
         >CPU版をダウンロード</ElButton
       >
-      <ElButton
-        :disabled="!releaseData"
-        :href="releaseData?.cuda"
-        target="_blank"
-        rel="noopener"
-        tag="a"
+      <ElButton :href="cudaUrl" target="_blank" rel="noopener" tag="a"
         >GPU版をダウンロード（CUDAが必要です）</ElButton
       >
     </div>
