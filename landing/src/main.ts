@@ -1,4 +1,4 @@
-import "@fontsource/zen-maru-gothic/index.css";
+import "@fontsource/zen-maru-gothic/400.css";
 import "@unocss/reset/tailwind.css";
 import "./styles/element.scss";
 import "./style.css";
