@@ -43,10 +43,10 @@ onMounted(async () => {
 const latestVersion = ref<string | null>(null);
 onMounted(async () => {
   const response = await fetch(
-    "https://api.github.com/repos/sevenc-nanashi/zundaarrow-tts/releases/latest",
+    "https://sevenc7c.com/zundaarrow-tts/version.json",
   ).then((res) => res.json());
 
-  latestVersion.value = response.tag_name;
+  latestVersion.value = response.version;
 });
 
 watch([latestVersion, appInfo], ([latestVersion, appInfo]) => {

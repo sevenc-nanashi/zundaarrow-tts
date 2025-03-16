@@ -13,3 +13,5 @@ await fs.writeFile(
   "landing/src/App.vue",
   appVue.replace(/const version = ".*";/, `const version = "${version}";`),
 );
+
+await fs.writeFile("landing/public/version.json", JSON.stringify({ version }));
