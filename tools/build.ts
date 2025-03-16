@@ -49,7 +49,7 @@ const archivePath = `${dirname}/../${internalName}.7z`;
 const metaPath = `${dirname}/../${internalName}.meta.json`;
 await $({
   cwd: `${dirname}/../target/release`,
-})`7z a -mx=9 -mfb=258 -v1999m -r ${archivePath} ${files}`;
+})`7z a -mx=9 -mfb=258 -v1999m -bsp1 -r ${archivePath} ${files}`;
 
 const list = await $`7z l ${archivePath}.001`.text();
 // 2025-03-09 07:30:34         6518015337   3876121952  60021 files, 6769 folders
