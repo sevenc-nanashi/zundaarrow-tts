@@ -99,7 +99,7 @@ jobs:
       - name: Build
         id: build
         run: |
-          pnpm run build ${{ jobs.info.outputs.version }} ${{ matrix.device }}
+          pnpm run build ${{ needs.info.outputs.version }} ${{ matrix.device }}
 
       - name: Release
         uses: softprops/action-gh-release@v2
@@ -107,7 +107,7 @@ jobs:
           files: |
             ${{ steps.build.outputs.assets }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ jobs.info.outputs.version }}
+          tag_name: ${{ needs.info.outputs.version }}
           prerelease: true
           draft: false
           body: |
@@ -121,7 +121,7 @@ jobs:
     needs:
       - info
       - build
-    if: jobs.info.outputs.prerelease == 'false'
+    if: needs.info.outputs.prerelease == 'false'
     permissions:
       contents: write
       actions: write
@@ -131,20 +131,20 @@ jobs:
 
       - name: Mark as release
         run: |
-          echo "Marking ${{ jobs.info.outputs.version }} as release"
-          gh release edit ${{ jobs.info.outputs.version }} --latest --prerelease=false
+          echo "Marking ${{ needs.info.outputs.version }} as release"
+          gh release edit ${{ needs.info.outputs.version }} --latest --prerelease=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update App.vue
-        run: pnpm run tools:setVersion ${{ jobs.info.outputs.version }}
+        run: pnpm run tools:setVersion ${{ needs.info.outputs.version }}
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add landing/src/App.vue
-          git commit -m "chore(landing): ${{ jobs.info.outputs.version }} に更新"
+          git commit -m "chore(landing): ${{ needs.info.outputs.version }} に更新"
           git push
 
       - name: Run workflow
