@@ -1,107 +1,291 @@
 import { parse } from "@std/toml";
 import { $, cd } from "zx";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import deepmerge from "deepmerge";
 import { setOutput } from "@actions/core";
+import createXxhash from "xxhash-wasm";
+import lzmajs from "lzma-native";
+import { pipeline } from "node:stream/promises";
+import { Semaphore } from "@core/asyncutil";
+import cliProgress from "cli-progress";
 
 if (process.argv.length < 4) {
   console.error("Usage: build.ts <version> <device>");
   process.exit(1);
 }
 
-const dirname = import.meta.dirname.replaceAll("\\", "/");
-const version = process.argv[2];
-const device = process.argv[3];
-$.verbose = true;
-cd(`${dirname}/../`);
-
-await $({
-  env: {
-    ...process.env,
-    ZTS_VERSION: version,
-    ZTS_DEVICE: device,
-  },
-})`pnpm run tauri build --config ./src-tauri/tauri.conf.prod.json`;
-
-const base = await fs.readFile("./src-tauri/Tauri.toml", "utf-8").then(parse);
-const patched = await fs
-  .readFile("./src-tauri/tauri.conf.prod.json", "utf-8")
-  .then(JSON.parse);
-
-const merged = deepmerge(base, patched) as any;
-
-const files = [
-  process.platform === "win32" ? "zundaarrow_tts.exe" : "zundaarrow_tts",
-  ...Object.values(merged.bundle.resources),
-];
-
-const platform =
-  process.platform === "win32"
-    ? "windows"
-    : process.platform === "darwin"
-      ? "macos"
-      : "linux";
-
-const baseName = `zundaarrow_tts-${platform}-${version}-${device}`;
-const internalName = `__internal_${baseName}`;
-const archivePath = `${dirname}/../${internalName}.7z`;
-const metaPath = `${dirname}/../${internalName}.meta.json`;
-await $({
-  cwd: `${dirname}/../target/release`,
-})`7z a -mx=9 -mfb=258 -v1999m -bsp1 -r ${archivePath} ${files}`;
-
-const list = await $`7z l ${archivePath}.001`.text();
-// 2025-03-09 07:30:34         6518015337   3876121952  60021 files, 6769 folders
-const size = list.match(
-  /(?<decompressedSize>[0-9]+) +(?<compressedSize>[0-9]+) +[0-9]+ files, [0-9]+ folders/,
-);
-if (!size) {
-  console.error("Failed to get archive size");
-  process.exit(1);
-}
-
-const compressedSize = parseInt(size.groups!.compressedSize);
-const decompressedSize = parseInt(size.groups!.decompressedSize);
-
-const meta = {
-  version,
-  device,
-  compressedSize,
-  decompressedSize,
+type HashInfo = {
+  position: number;
+  compressedSize: number;
+  decompressedSize: number;
 };
 
-await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
+const xxhash = await createXxhash();
 
-const archivePaths = await fs
-  .readdir(path.dirname(archivePath))
-  .then((files) =>
-    files
-      .filter((file) => file.startsWith(path.basename(archivePath)))
-      .map((file) => path.join(path.dirname(archivePath), file)),
+async function main() {
+  const dirname = import.meta.dirname.replaceAll("\\", "/");
+  const version = process.argv[2];
+  const device = process.argv[3];
+  $.verbose = true;
+
+  cd(`${dirname}/../`);
+  const platform =
+    process.platform === "win32"
+      ? "windows"
+      : process.platform === "darwin"
+        ? "macos"
+        : "linux";
+
+  const baseName = `zundaarrow_tts-${platform}-${version}-${device}`;
+  const internalName = `__internal_${baseName}`;
+  const destRoot = `${dirname}/../dist-packed`;
+  const archivePath = `${destRoot}/${internalName}.bin`;
+  const metaPath = `${destRoot}/${internalName}.json`;
+  const filesRoot = `${dirname}/../target/release`;
+
+  console.log("Building Tauri");
+  // await buildTauri(version, device);
+  console.log("Compressing files");
+  const { hashInfo, fileToHash } = await compressFiles(destRoot, filesRoot);
+  console.log("Creating archive");
+  await createArchive(archivePath, `${destRoot}/repository`, hashInfo);
+  console.log("Writing meta");
+  await writeMeta(
+    baseName,
+    destRoot,
+    metaPath,
+    archivePath,
+    version,
+    device,
+    fileToHash,
+    hashInfo,
+  );
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+async function buildTauri(version: string, device: string) {
+  await $({
+    env: {
+      ...process.env,
+      ZTS_VERSION: version,
+      ZTS_DEVICE: device,
+    },
+  })`pnpm run tauri build --config ./src-tauri/tauri.conf.prod.json`;
+}
+
+async function compressFiles(destRoot: string, filesRoot: string) {
+  const base = await fs.readFile("./src-tauri/Tauri.toml", "utf-8").then(parse);
+  const patched = await fs
+    .readFile("./src-tauri/tauri.conf.prod.json", "utf-8")
+    .then(JSON.parse);
+
+  const merged = deepmerge(base, patched) as any;
+
+  const roots = [
+    process.platform === "win32" ? "zundaarrow_tts.exe" : "zundaarrow_tts",
+    ...Object.values(merged.bundle.resources),
+  ] as string[];
+
+  const repositoryPath = `${destRoot}/repository/`;
+  await fs.mkdir(repositoryPath, { recursive: true });
+
+  const getHash = async (path: string) => {
+    const file = fsSync.createReadStream(path);
+    const hash = xxhash.create64();
+    for await (const chunk of file) {
+      hash.update(chunk);
+    }
+    const hashString = hash.digest().toString(16).padStart(16, "0");
+
+    return hashString;
+  };
+
+  const fileToHash: Map<string, string> = new Map();
+  const hashInfo: Map<string, HashInfo> = new Map();
+  const hashes = new Set<string>();
+  const throttle = 10;
+  const semaphore = new Semaphore(throttle);
+
+  const shouldIgnore = (path: string) =>
+    [".h", ".hpp", ".c", ".cpp"].some((ext) => path.endsWith(ext)) ||
+    path.includes("__pycache__");
+
+  const pack = async (path: string, relativePath: string) => {
+    const hashString = await getHash(path);
+    fileToHash.set(relativePath, hashString);
+    if (hashes.has(hashString)) {
+      return;
+    }
+    hashes.add(hashString);
+    const finalPath = `${repositoryPath}/${hashString}`;
+    const finalPathStat = await fs.stat(finalPath).catch(() => null);
+    if (finalPathStat) {
+      const info = await fs.stat(path);
+      hashInfo.set(hashString, {
+        position: -1,
+        compressedSize: finalPathStat.size,
+        decompressedSize: info.size,
+      });
+      return;
+    }
+
+    await semaphore.lock(async () => {
+      console.log(`Compressing ${relativePath}`);
+      const compressed = fsSync.createWriteStream(`${finalPath}.tmp`);
+      const compressor = lzmajs.createCompressor({
+        preset: 9,
+      });
+
+      const file = fsSync.createReadStream(path);
+      await pipeline(file, compressor, compressed, {
+        end: true,
+      });
+
+      hashInfo.set(hashString, {
+        position: -1,
+        compressedSize: compressed.bytesWritten,
+        decompressedSize: file.bytesRead,
+      });
+      await fs.rename(`${finalPath}.tmp`, finalPath);
+    });
+  };
+  const promises: Promise<void>[] = [];
+
+  const filePaths: string[] = [];
+  for (const root of roots) {
+    const stat = await fs.stat(`${filesRoot}/${root}`).catch(() => null);
+    if (!stat) {
+      console.error(`Failed to stat ${root}`);
+      process.exit(1);
+    }
+    if (stat.isFile()) {
+      filePaths.push(`${filesRoot}/${root}`);
+    } else {
+      console.log(`Traversing ${root}`);
+      for await (const file of fs.glob(`${filesRoot}/${root}/**/*`, {
+        withFileTypes: true,
+      })) {
+        if (!file.isFile()) {
+          continue;
+        }
+        const filePath = `${file.parentPath}/${file.name}`;
+        const relativePath = path.relative(filesRoot, filePath);
+        if (shouldIgnore(relativePath)) {
+          continue;
+        }
+        filePaths.push(filePath);
+      }
+    }
+  }
+
+  const progress = new cliProgress.SingleBar(
+    {},
+    cliProgress.Presets.shades_classic,
+  );
+  progress.start(filePaths.length, 0);
+  for (const filePath of filePaths) {
+    const relativePath = path.relative(filesRoot, filePath);
+    promises.push(
+      pack(filePath, relativePath).then(() => progress.increment()),
+    );
+  }
+
+  await Promise.all(promises);
+  progress.stop();
+
+  return {
+    hashInfo,
+    hashes,
+    fileToHash,
+  };
+}
+
+async function createArchive(
+  archivePath: string,
+  repositoryPath: string,
+  hashInfo: Map<
+    string,
+    { position: number; compressedSize: number; decompressedSize: number }
+  >,
+) {
+  const archive = fsSync.createWriteStream(archivePath);
+  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+  bar.start(hashInfo.size, 0);
+  let position = 0;
+  for (const [hash, info] of hashInfo) {
+    info.position = position;
+    const path = `${repositoryPath}/${hash}`;
+    const file = fsSync.createReadStream(path);
+    for await (const chunk of file) {
+      archive.write(chunk);
+    }
+    position += info.compressedSize;
+    bar.increment();
+  }
+  bar.stop();
+  archive.end();
+}
+
+// const list = await $`7z l ${archivePath}.001`.text();
+// // 2025-03-09 07:30:34         6518015337   3876121952  60021 files, 6769 folders
+// const size = list.match(
+//   /(?<decompressedSize>[0-9]+) +(?<compressedSize>[0-9]+) +[0-9]+ files, [0-9]+ folders/,
+// );
+// if (!size) {
+//   console.error("Failed to get archive size");
+//   process.exit(1);
+// }
+//
+// const compressedSize = parseInt(size.groups!.compressedSize);
+// const decompressedSize = parseInt(size.groups!.decompressedSize);
+
+async function writeMeta(
+  baseName: string,
+  destRoot: string,
+  metaPath: string,
+  archivePath: string,
+  version: string,
+  device: string,
+  fileToHash: Map<string, string>,
+  hashInfo: Map<string, HashInfo>,
+) {
+  const meta = {
+    version,
+    device,
+    hashes: Object.fromEntries(fileToHash),
+    hashInfo: Object.fromEntries(hashInfo),
+  };
+
+  await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
+
+  await $({
+    cwd: `${import.meta.dirname}/../installer`,
+    env: {
+      ...process.env,
+      ZTS_VERSION: version,
+      ZTS_DEVICE: device,
+    },
+  })`cargo build --release`;
+
+  const suffix = process.platform === "win32" ? ".exe" : "";
+  const installerPath = `${destRoot}/${baseName}-installer${suffix}`;
+  await fs.copyFile(
+    `${import.meta.dirname}/../target/release/installer${suffix}`,
+    installerPath,
   );
 
-await $({
-  cwd: `${import.meta.dirname}/../installer`,
-  env: {
-    ...process.env,
-    ZTS_VERSION: version,
-    ZTS_DEVICE: device,
-  },
-})`cargo build --release`;
+  const dummyFileName = `_internal______________________________________`;
+  const dummyFilePath = `${destRoot}/${dummyFileName}`;
+  await fs.writeFile(dummyFilePath, " ");
 
-const suffix = process.platform === "win32" ? ".exe" : "";
-const installerPath = `${import.meta.dirname}/../${baseName}-installer${suffix}`;
-await fs.copyFile(
-  `${import.meta.dirname}/../target/release/installer${suffix}`,
-  installerPath,
-);
-
-const dummyFileName = `_internal______________________________________`;
-const dummyFilePath = `${import.meta.dirname}/../${dummyFileName}`;
-await fs.writeFile(dummyFilePath, " ");
-
-setOutput(
-  "assets",
-  [...archivePaths, installerPath, metaPath, dummyFilePath].join("\n"),
-);
+  setOutput(
+    "assets",
+    [archivePath, installerPath, metaPath, dummyFilePath].join("\n"),
+  );
+}
