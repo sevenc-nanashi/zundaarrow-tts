@@ -146,7 +146,9 @@ jobs:
           cache: "pnpm"
 
       - name: Update App.vue
-        run: pnpm run tools:setVersion ${{ needs.info.outputs.version }}
+        run: |
+          pnpm i
+          pnpm run tools:setVersion ${{ needs.info.outputs.version }}
 
       - name: Commit changes
         run: |
