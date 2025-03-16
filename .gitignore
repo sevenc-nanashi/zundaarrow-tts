@@ -30,3 +30,4 @@ zundamon-speech/server/weight.json
 zundamon-speech-setup/tmp
 
 target
+dist-packed

@@ -3,7 +3,7 @@ import { onMounted } from "vue";
 import windowSrc from "./assets/zundaarrow.webp?format=webp&imagetools";
 import { ElButton } from "element-plus";
 
-const version = "0.1.1";
+const version = "0.1.2";
 const cpuUrl = `https://github.com/sevenc-nanashi/zundaarrow-tts/releases/download/${version}/zundaarrow_tts-windows-${version}-cpu-installer.exe`;
 const cudaUrl = `https://github.com/sevenc-nanashi/zundaarrow-tts/releases/download/${version}/zundaarrow_tts-windows-${version}-cuda-installer.exe`;
 onMounted(() => {
