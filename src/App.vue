@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { RouterView } from "vue-router";
 import { AppInfo, invoke } from "./invoke";
 import DialogDisplay from "./components/DialogDisplay.vue";
 import { useDialogStore } from "./stores/dialog";
+import semver from "semver";
+import { ElNotification } from "element-plus";
 
 const zundamonImagesRaw = import.meta.glob<string>("./assets/zundamon/*.webp", {
   eager: true,
@@ -34,6 +36,36 @@ onMounted(async () => {
           `サーバーが終了コード${notification.code}で終了しました。ログを確認してください。`,
         );
         break;
+    }
+  }
+});
+
+const latestVersion = ref<string | null>(null);
+onMounted(async () => {
+  const response = await fetch(
+    "https://api.github.com/repos/sevenc-nanashi/zundaarrow-tts/releases/latest",
+  ).then((res) => res.json());
+
+  latestVersion.value = response.tag_name;
+});
+
+watch([latestVersion, appInfo], ([latestVersion, appInfo]) => {
+  if (latestVersion && appInfo) {
+    console.log(`version: ${appInfo.version}, latest: ${latestVersion}`);
+    if (appInfo.version === "0.0.0") {
+      return;
+    }
+    if (semver.gt(latestVersion, appInfo.version)) {
+      ElNotification({
+        title: "新しいバージョンがリリースされています",
+        message:
+          `最新バージョン：` +
+          `<a href="https://sevenc7c.com/zundaarrow-tts" target="_blank" un-text="green-600" un-underline="hover:~">` +
+          `v${latestVersion}` +
+          `</a>`,
+        dangerouslyUseHTMLString: true,
+        position: "bottom-right",
+      });
     }
   }
 });
