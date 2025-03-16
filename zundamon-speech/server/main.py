@@ -12,7 +12,11 @@ import sys
 import io
 import nltk
 import json
+from functools import partialmethod
+from tqdm import tqdm
 
+
+tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 nltk.download("averaged_perceptron_tagger")
 nltk.download("averaged_perceptron_tagger_eng")
 
