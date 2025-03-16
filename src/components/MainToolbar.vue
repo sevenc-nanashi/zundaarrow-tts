@@ -32,7 +32,7 @@ const showAppInfo = async () => {
 <template>
   <nav un-absolute un-top="2" un-right="2" un-flex="~ col" un-gap="2">
     <ElTooltip content="利用規約" placement="left">
-      <ElButton circle target="_blank" :href="termsUrl" un-ml="!0">
+      <ElButton circle target="_blank" :href="termsUrl" tag="a" un-ml="!0">
         <div
           un-i-material-symbols-balance
           un-inline-block
