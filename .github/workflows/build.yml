@@ -137,15 +137,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update App.vue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-
-            const version = ${{ toJson(jobs.info.outputs.version) }};
-
-            const appVue = fs.readFileSync('landing/src/App.vue', 'utf8');
-            fs.writeFileSync('landing/src/App.vue', appVue.replace(/const version = ".*";/, `const version = "${version}";`));
+        run: pnpm run tools:setVersion ${{ jobs.info.outputs.version }}
 
       - name: Commit changes
         run: |

@@ -9,7 +9,8 @@
     "build": "node --experimental-strip-types ./tools/build.ts",
     "build:vite": "vue-tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tools:setVersion": "node --experimental-strip-types ./tools/setVersion.ts"
   },
   "dependencies": {
     "@fontsource/zen-maru-gothic": "^5.2.5",
