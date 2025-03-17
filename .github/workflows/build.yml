@@ -96,6 +96,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Cache archive repository
+        uses: actions/cache@v4
+        with:
+          key: archive-v0
+          path: |
+            ./dist-packed/repository
+
+
       - name: Build
         id: build
         run: |

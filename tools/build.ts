@@ -46,7 +46,7 @@ async function main() {
   const filesRoot = `${dirname}/../target/release`;
 
   console.log("Building Tauri");
-  // await buildTauri(version, device);
+  await buildTauri(version, device);
   console.log("Compressing files");
   const { hashInfo, fileToHash } = await compressFiles(destRoot, filesRoot);
   console.log("Creating archive");
