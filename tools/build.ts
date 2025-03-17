@@ -219,7 +219,7 @@ async function createArchive(
   >,
 ) {
   const archives = [baseArchivePath + ".001"];
-  const maxArchiveSize = 1000 * 1000 * 1000 * 2;
+  const maxArchiveSize = 1024 * 1024 * 1024 * 2 - 1;
   let archive = fsSync.createWriteStream(baseArchivePath + ".001");
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   bar.start(hashInfo.size, 0);
@@ -238,8 +238,8 @@ async function createArchive(
         position = 0;
       }
       archive.write(chunk);
+      position += chunk.length;
     }
-    position += info.compressedSize;
     bar.increment();
   }
   bar.stop();
