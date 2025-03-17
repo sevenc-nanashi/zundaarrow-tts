@@ -178,7 +178,9 @@ async function compressFiles(destRoot: string, filesRoot: string) {
           continue;
         }
         const filePath = `${file.parentPath}/${file.name}`;
-        const relativePath = path.relative(filesRoot, filePath);
+        const relativePath = path
+          .relative(filesRoot, filePath)
+          .replaceAll("\\", "/");
         if (shouldIgnore(relativePath)) {
           continue;
         }
@@ -265,7 +267,7 @@ async function writeMeta(
     hashInfo: Object.fromEntries(hashInfo),
   };
 
-  await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
+  await fs.writeFile(metaPath, JSON.stringify(meta));
 
   await $({
     cwd: `${import.meta.dirname}/../installer`,

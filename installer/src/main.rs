@@ -43,8 +43,16 @@ struct HashInfo {
 struct ReleaseInfo {
     version: String,
     device: String,
-    hashes: HashMap<String, String>,
-    hash_info: HashMap<String, HashInfo>,
+    hashes: HashMap<String, FileHash>,
+    hash_info: HashMap<FileHash, HashInfo>,
+}
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+struct FileHash(String);
+impl std::fmt::Display for FileHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.0)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -98,7 +106,7 @@ async fn main_inner() -> Result<()> {
     let release_assets = get_release_assets(&VERSION, device).await?;
     let release_info = release_assets
         .iter()
-        .find(|asset| asset.name.ends_with(".meta.json"))
+        .find(|asset| asset.name.ends_with(".json"))
         .ok_or_else(|| anyhow::anyhow!("リリース情報が見つかりませんでした"))?;
 
     let release_info = reqwest::get(release_info.browser_download_url.clone())
@@ -165,7 +173,7 @@ async fn main_inner() -> Result<()> {
             let number = asset
                 .name
                 .split('.')
-                .nth_back(1)
+                .nth_back(0)
                 .unwrap()
                 .parse::<u32>()
                 .unwrap();
@@ -184,6 +192,7 @@ async fn main_inner() -> Result<()> {
     let download_root = install_dir.join("downloads");
     let downloaded_files = download_partitions(
         &archive_infos,
+        &release_info.hashes,
         &release_info.hash_info,
         &files_to_download,
         &download_root,
@@ -286,10 +295,11 @@ async fn download_urls(map: Vec<DownloadSpecification>) -> Result<()> {
 
 async fn diff_destination(
     old_destination: &std::path::Path,
-    files_to_hash: &HashMap<String, String>,
+    files_to_hash: &HashMap<String, FileHash>,
 ) -> Result<(Vec<String>, Vec<String>)> {
     let existing_file_hashes = tokio::fs::read(&old_destination.join(FILE_HASHES_NAME)).await?;
-    let existing_file_hashes: HashMap<String, String> = serde_json::from_slice(&existing_file_hashes)?;
+    let existing_file_hashes: HashMap<String, FileHash> =
+        serde_json::from_slice(&existing_file_hashes)?;
     let mut files_to_download = Vec::new();
     let mut files_to_remove = Vec::new();
     for (name, latest_hash) in files_to_hash {
@@ -315,9 +325,13 @@ async fn sum_download_size(
     let mut download_compressed_size = 0;
     let mut download_decompressed_size = 0;
     for name in files_to_download {
+        let hash = release_info
+            .hashes
+            .get(name)
+            .ok_or_else(|| anyhow::anyhow!("{}のハッシュが見つかりませんでした", name))?;
         let hash_info = release_info
             .hash_info
-            .get(name)
+            .get(hash)
             .ok_or_else(|| anyhow::anyhow!("{}のハッシュ情報が見つかりませんでした", name))?;
         download_compressed_size += hash_info.compressed_size;
         download_decompressed_size += hash_info.decompressed_size;
@@ -327,12 +341,13 @@ async fn sum_download_size(
 
 async fn download_partitions(
     archive_infos: &[ArchiveInfo],
-    hash_infos: &HashMap<String, HashInfo>,
+    file_to_hash: &HashMap<String, FileHash>,
+    hash_infos: &HashMap<FileHash, HashInfo>,
     files_to_download: &[String],
     download_root: &std::path::Path,
-) -> Result<HashMap<String, std::path::PathBuf>> {
+) -> Result<HashMap<FileHash, std::path::PathBuf>> {
     let download_partitions_map = vec![];
-    let mut sum_sizes = vec![0; archive_infos.len()];
+    let mut sum_sizes = vec![];
     let mut current_sum = 0;
     for archive_info in archive_infos {
         sum_sizes.push(current_sum);
@@ -341,14 +356,26 @@ async fn download_partitions(
 
     let mut download_partition_map = vec![];
     let mut file_paths = HashMap::new();
-    for hash in files_to_download {
+    for name in files_to_download {
+        let hash = file_to_hash
+            .get(name)
+            .ok_or_else(|| anyhow::anyhow!("{}のハッシュが見つかりませんでした", name))?;
         let hash_info = hash_infos
             .get(hash)
             .ok_or_else(|| anyhow::anyhow!("{}のハッシュ情報が見つかりませんでした", hash))?;
 
         let start_index = sum_sizes
-            .binary_search(&hash_info.position)
-            .unwrap_or_else(|x| x);
+            .iter()
+            .enumerate()
+            .filter_map(|(index, sum)| {
+                if hash_info.position >= *sum {
+                    Some(index)
+                } else {
+                    None
+                }
+            })
+            .last()
+            .ok_or_else(|| anyhow::anyhow!("{}のアーカイブが見つかりませんでした", hash))?;
 
         let dest_path = download_root.join(format!("{}.lzma", hash));
         file_paths.insert(hash.clone(), dest_path.clone());
@@ -368,16 +395,16 @@ async fn download_partitions(
 }
 
 async fn deploy_files(
-    downloaded_files: &HashMap<String, std::path::PathBuf>,
+    downloaded_files: &HashMap<FileHash, std::path::PathBuf>,
     install_dir: &std::path::Path,
-    file_to_hash: &HashMap<String, String>,
+    file_to_hash: &HashMap<String, FileHash>,
 ) -> Result<()> {
     let mut hash_to_files = HashMap::new();
-    for (hash, path) in downloaded_files {
+    for (file, hash) in file_to_hash {
         hash_to_files
-            .entry(file_to_hash[hash].clone())
+            .entry(hash)
             .or_insert_with(Vec::new)
-            .push(path);
+            .push(file.clone());
     }
 
     let progress = indicatif::ProgressBar::new(hash_to_files.len() as u64);
@@ -388,7 +415,7 @@ async fn deploy_files(
             .iter()
             .map(|path| install_dir.join(path))
             .collect::<Vec<_>>();
-        let input_path = downloaded_files.get(&hash).unwrap().clone();
+        let input_path = downloaded_files.get(hash).unwrap().clone();
         let progress = progress.clone();
 
         let semaphore = semaphore.clone();
