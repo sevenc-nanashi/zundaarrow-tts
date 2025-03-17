@@ -50,13 +50,17 @@ async function main() {
   console.log("Compressing files");
   const { hashInfo, fileToHash } = await compressFiles(destRoot, filesRoot);
   console.log("Creating archive");
-  await createArchive(archivePath, `${destRoot}/repository`, hashInfo);
+  const archivePaths = await createArchive(
+    archivePath,
+    `${destRoot}/repository`,
+    hashInfo,
+  );
   console.log("Writing meta");
   await writeMeta(
     baseName,
     destRoot,
     metaPath,
-    archivePath,
+    archivePaths,
     version,
     device,
     fileToHash,
@@ -188,6 +192,7 @@ async function compressFiles(destRoot: string, filesRoot: string) {
     {},
     cliProgress.Presets.shades_classic,
   );
+  console.log(`Compressing ${filePaths.length} files`);
   progress.start(filePaths.length, 0);
   for (const filePath of filePaths) {
     const relativePath = path.relative(filesRoot, filePath);
@@ -207,14 +212,16 @@ async function compressFiles(destRoot: string, filesRoot: string) {
 }
 
 async function createArchive(
-  archivePath: string,
+  baseArchivePath: string,
   repositoryPath: string,
   hashInfo: Map<
     string,
     { position: number; compressedSize: number; decompressedSize: number }
   >,
 ) {
-  const archive = fsSync.createWriteStream(archivePath);
+  const archives = [baseArchivePath + ".001"];
+  const maxArchiveSize = 1000 * 1000 * 1000 * 2;
+  let archive = fsSync.createWriteStream(baseArchivePath + ".001");
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   bar.start(hashInfo.size, 0);
   let position = 0;
@@ -223,6 +230,14 @@ async function createArchive(
     const path = `${repositoryPath}/${hash}`;
     const file = fsSync.createReadStream(path);
     for await (const chunk of file) {
+      if (position + chunk.length > maxArchiveSize) {
+        archive.end();
+        const newFileName = `${baseArchivePath}.${(archives.length + 1).toString().padStart(3, "0")}`;
+        archive = fsSync.createWriteStream(newFileName);
+
+        archives.push(newFileName);
+        position = 0;
+      }
       archive.write(chunk);
     }
     position += info.compressedSize;
@@ -230,26 +245,15 @@ async function createArchive(
   }
   bar.stop();
   archive.end();
-}
 
-// const list = await $`7z l ${archivePath}.001`.text();
-// // 2025-03-09 07:30:34         6518015337   3876121952  60021 files, 6769 folders
-// const size = list.match(
-//   /(?<decompressedSize>[0-9]+) +(?<compressedSize>[0-9]+) +[0-9]+ files, [0-9]+ folders/,
-// );
-// if (!size) {
-//   console.error("Failed to get archive size");
-//   process.exit(1);
-// }
-//
-// const compressedSize = parseInt(size.groups!.compressedSize);
-// const decompressedSize = parseInt(size.groups!.decompressedSize);
+  return archives;
+}
 
 async function writeMeta(
   baseName: string,
   destRoot: string,
   metaPath: string,
-  archivePath: string,
+  archivePaths: string[],
   version: string,
   device: string,
   fileToHash: Map<string, string>,
@@ -286,6 +290,6 @@ async function writeMeta(
 
   setOutput(
     "assets",
-    [archivePath, installerPath, metaPath, dummyFilePath].join("\n"),
+    [...archivePaths, installerPath, metaPath, dummyFilePath].join("\n"),
   );
 }
