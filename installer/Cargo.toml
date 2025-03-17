@@ -12,6 +12,7 @@ enable-ansi-support = "0.2.1"
 figlet-rs = "0.1.5"
 futures = "0.3.31"
 indicatif = "0.17.11"
+itertools = "0.14.0"
 lzma-rs = "0.3.0"
 octocrab = "0.43.0"
 reqwest = { version = "0.12.12", features = ["json"] }

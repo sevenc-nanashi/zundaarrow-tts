@@ -204,7 +204,9 @@ async function compressFiles(destRoot: string, filesRoot: string) {
   console.log(`Compressing ${filePaths.length} files`);
   progress.start(filePaths.length, 0);
   for (const filePath of filePaths) {
-    const relativePath = path.relative(filesRoot, filePath);
+    const relativePath = path
+      .relative(filesRoot, filePath)
+      .replaceAll("\\", "/");
     promises.push(
       pack(filePath, relativePath).then(() => progress.increment()),
     );
@@ -238,15 +240,16 @@ async function createArchive(
     info.position = position;
     const path = `${repositoryPath}/${hash}`;
     const file = fsSync.createReadStream(path);
-    for await (const chunk of file) {
-      if (position + chunk.length > maxArchiveSize) {
-        archive.end();
-        const newFileName = `${baseArchivePath}.${(archives.length + 1).toString().padStart(3, "0")}`;
-        archive = fsSync.createWriteStream(newFileName);
 
-        archives.push(newFileName);
-        position = 0;
-      }
+    if (position + info.compressedSize > maxArchiveSize) {
+      archive.end();
+      const newFileName = `${baseArchivePath}.${(archives.length + 1).toString().padStart(3, "0")}`;
+      archive = fsSync.createWriteStream(newFileName);
+
+      archives.push(newFileName);
+      position = 0;
+    }
+    for await (const chunk of file) {
       archive.write(chunk);
       position += chunk.length;
     }
