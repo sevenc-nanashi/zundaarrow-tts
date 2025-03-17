@@ -225,33 +225,32 @@ async function compressFiles(destRoot: string, filesRoot: string) {
 async function createArchive(
   baseArchivePath: string,
   repositoryPath: string,
-  hashInfo: Map<
-    string,
-    { position: number; compressedSize: number; decompressedSize: number }
-  >,
+  hashInfo: Map<string, HashInfo>,
 ) {
   const archives = [baseArchivePath + ".001"];
   const maxArchiveSize = 1024 * 1024 * 1024 * 2 - 1;
   let archive = fsSync.createWriteStream(baseArchivePath + ".001");
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
   bar.start(hashInfo.size, 0);
-  let position = 0;
+  let bytesWritten = 0;
+  let allPosition = 0;
   for (const [hash, info] of hashInfo) {
-    info.position = position;
     const path = `${repositoryPath}/${hash}`;
     const file = fsSync.createReadStream(path);
 
-    if (position + info.compressedSize > maxArchiveSize) {
+    if (bytesWritten + info.compressedSize > maxArchiveSize) {
       archive.end();
       const newFileName = `${baseArchivePath}.${(archives.length + 1).toString().padStart(3, "0")}`;
       archive = fsSync.createWriteStream(newFileName);
 
       archives.push(newFileName);
-      position = 0;
+      bytesWritten = 0;
     }
+    info.position = allPosition;
     for await (const chunk of file) {
       archive.write(chunk);
-      position += chunk.length;
+      bytesWritten += chunk.length;
+      allPosition += chunk.length;
     }
     bar.increment();
   }
