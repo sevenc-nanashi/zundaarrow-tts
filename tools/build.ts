@@ -12,7 +12,7 @@ import { Semaphore } from "@core/asyncutil";
 import cliProgress from "cli-progress";
 
 if (process.argv.length < 4) {
-  console.error("Usage: build.ts <version> <device>");
+  console.error("Usage: build.ts <version> <device> [...options]");
   process.exit(1);
 }
 
@@ -28,6 +28,7 @@ async function main() {
   const dirname = import.meta.dirname.replaceAll("\\", "/");
   const version = process.argv[2];
   const device = process.argv[3];
+  const skipTauri = process.argv.includes("--skip-tauri");
   $.verbose = true;
 
   cd(`${dirname}/../`);
@@ -45,8 +46,10 @@ async function main() {
   const metaPath = `${destRoot}/${internalName}.json`;
   const filesRoot = `${dirname}/../target/release`;
 
-  console.log("Building Tauri");
-  await buildTauri(version, device);
+  if (!skipTauri) {
+    console.log("Building Tauri");
+    await buildTauri(version, device);
+  }
   console.log("Compressing files");
   const { hashInfo, fileToHash } = await compressFiles(destRoot, filesRoot);
   console.log("Creating archive");
@@ -66,6 +69,11 @@ async function main() {
     fileToHash,
     hashInfo,
   );
+
+  if (!skipTauri) {
+    console.log("Cleaning up");
+    await fs.rm(`${filesRoot}/zundamon-speech`, { recursive: true });
+  }
 }
 
 main().catch((e) => {
