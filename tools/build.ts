@@ -120,26 +120,26 @@ async function compressFiles(destRoot: string, filesRoot: string) {
     [".h", ".hpp", ".c", ".cpp"].some((ext) => path.endsWith(ext)) ||
     path.includes("__pycache__");
 
-  const pack = async (path: string, relativePath: string) => {
-    const hashString = await getHash(path);
-    fileToHash.set(relativePath, hashString);
-    if (hashes.has(hashString)) {
-      return;
-    }
-    hashes.add(hashString);
-    const finalPath = `${repositoryPath}/${hashString}`;
-    const finalPathStat = await fs.stat(finalPath).catch(() => null);
-    if (finalPathStat) {
-      const info = await fs.stat(path);
-      hashInfo.set(hashString, {
-        position: -1,
-        compressedSize: finalPathStat.size,
-        decompressedSize: info.size,
-      });
-      return;
-    }
+  const pack = (path: string, relativePath: string) =>
+    semaphore.lock(async () => {
+      const hashString = await getHash(path);
+      fileToHash.set(relativePath, hashString);
+      if (hashes.has(hashString)) {
+        return;
+      }
+      hashes.add(hashString);
+      const finalPath = `${repositoryPath}/${hashString}`;
+      const finalPathStat = await fs.stat(finalPath).catch(() => null);
+      if (finalPathStat) {
+        const info = await fs.stat(path);
+        hashInfo.set(hashString, {
+          position: -1,
+          compressedSize: finalPathStat.size,
+          decompressedSize: info.size,
+        });
+        return;
+      }
 
-    await semaphore.lock(async () => {
       console.log(`Compressing ${relativePath}`);
       const compressed = fsSync.createWriteStream(`${finalPath}.tmp`);
       const compressor = lzmajs.createCompressor({
@@ -158,7 +158,6 @@ async function compressFiles(destRoot: string, filesRoot: string) {
       });
       await fs.rename(`${finalPath}.tmp`, finalPath);
     });
-  };
   const promises: Promise<void>[] = [];
 
   const filePaths: string[] = [];
