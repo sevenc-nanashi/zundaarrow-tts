@@ -63,6 +63,9 @@ jobs:
         with:
           working-directory: ./zundamon-speech-setup
 
+      - name: Set up vcpkg
+        uses: friendlyanon/setup-vcpkg@v1
+
       - name: Cache setup
         id: cache_key
         run: |
