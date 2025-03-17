@@ -28,7 +28,7 @@ async function main() {
   const dirname = import.meta.dirname.replaceAll("\\", "/");
   const version = process.argv[2];
   const device = process.argv[3];
-  const skipTauri = process.argv.includes("--skip-tauri");
+  const skipTauri = process.argv.includes("--skipTauri");
   $.verbose = true;
 
   cd(`${dirname}/../`);
@@ -234,25 +234,53 @@ async function createArchive(
   bar.start(hashInfo.size, 0);
   let bytesWritten = 0;
   let allPosition = 0;
-  for (const [hash, info] of hashInfo) {
-    const path = `${repositoryPath}/${hash}`;
-    const file = fsSync.createReadStream(path);
 
-    if (bytesWritten + info.compressedSize > maxArchiveSize) {
-      archive.end();
-      const newFileName = `${baseArchivePath}.${(archives.length + 1).toString().padStart(3, "0")}`;
-      archive = fsSync.createWriteStream(newFileName);
-
-      archives.push(newFileName);
-      bytesWritten = 0;
-    }
+  const appendFile = async (
+    archive: fsSync.WriteStream,
+    path: string,
+    info: HashInfo,
+  ) => {
     info.position = allPosition;
+    const file = fsSync.createReadStream(path);
     for await (const chunk of file) {
       archive.write(chunk);
       bytesWritten += chunk.length;
       allPosition += chunk.length;
     }
     bar.increment();
+  };
+  const sortedHashInfo = [...hashInfo.entries()].toSorted(
+    ([_a, a], [_b, b]) => b.compressedSize - a.compressedSize,
+  );
+  while (sortedHashInfo.length > 0) {
+    const [hash, info] = sortedHashInfo[0];
+    const path = `${repositoryPath}/${hash}`;
+
+    if (bytesWritten + info.compressedSize > maxArchiveSize) {
+      const maximumFileIndex = sortedHashInfo.findIndex(
+        ([_hash, info]) => bytesWritten + info.compressedSize <= maxArchiveSize,
+      );
+      if (maximumFileIndex !== -1) {
+        const [maximumFileHash, maximumFileInfo] =
+          sortedHashInfo[maximumFileIndex];
+        await appendFile(
+          archive,
+          `${repositoryPath}/${maximumFileHash}`,
+          maximumFileInfo,
+        );
+        sortedHashInfo.splice(maximumFileIndex, 1);
+      } else {
+        archive.end();
+        const newFileName = `${baseArchivePath}.${(archives.length + 1).toString().padStart(3, "0")}`;
+        archive = fsSync.createWriteStream(newFileName);
+
+        archives.push(newFileName);
+        bytesWritten = 0;
+      }
+    } else {
+      await appendFile(archive, path, info);
+      sortedHashInfo.shift();
+    }
   }
   bar.stop();
   archive.end();

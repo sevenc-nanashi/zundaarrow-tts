@@ -1,5 +1,9 @@
 use lzma_rs::lzma_decompress;
-use std::{collections::{HashMap, HashSet}, io::Read, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    io::Read,
+    sync::Arc,
+};
 use tap::Pipe;
 use tokio::io::AsyncWriteExt;
 mod log;
@@ -287,7 +291,7 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
                 ));
                 download_progress.set_style(
                     indicatif::ProgressStyle::default_bar()
-                        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
+                        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.green/cyan}] {bytes}/{total_bytes} ({eta})")?
                         .progress_chars("#>-"),
                 );
                 let mut response = client
@@ -314,36 +318,35 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
                 let mut dest_file = tokio::fs::File::create(&spec.dest[0].0).await?;
                 let mut current_dest_index = 0;
                 let mut current_bytes = 0;
-                while let Some(chunk) = response.chunk().await? {
-                    if spec.dest.len() > 1 && current_dest_index <= spec.dest.len() - 2 {
+                while let Some(mut chunk) = response.chunk().await? {
+                    while spec
+                        .dest
+                        .get(current_dest_index + 1)
+                        .map(|(_, start)| *start)
+                        .is_some_and(|start| {
+                            current_bytes + chunk.len() as u64 >= start
+                        })
+                    {
                         let next_dest_start_bytes = spec.dest[current_dest_index + 1].1;
-                        if current_bytes + chunk.len() as u64 >= next_dest_start_bytes {
-                            dest_file
-                                .write_all(
-                                    &chunk[..(next_dest_start_bytes - current_bytes) as usize],
-                                )
-                                .await?;
-                            dest_file =
-                                tokio::fs::File::create(&spec.dest[current_dest_index + 1].0)
-                                    .await?;
-                            current_dest_index += 1;
-                            dest_file
-                                .write_all(
-                                    &chunk[(next_dest_start_bytes - current_bytes) as usize..],
-                                )
-                                .await?;
-                        } else {
-                            dest_file.write_all(&chunk).await?;
-                        }
-                    } else {
-                        dest_file.write_all(&chunk).await?;
+                        let part = chunk.split_to((next_dest_start_bytes - current_bytes) as usize);
+
+                        download_progress.inc(part.len() as u64);
+                        dest_file.write_all(&part).await?;
+
+                        dest_file =
+                            tokio::fs::File::create(&spec.dest[current_dest_index + 1].0).await?;
+                        current_dest_index += 1;
+                        current_bytes = next_dest_start_bytes;
                     }
+
                     download_progress.inc(chunk.len() as u64);
+                    dest_file.write_all(&chunk).await?;
                     current_bytes += chunk.len() as u64;
                 }
                 download_progress.finish();
                 download_progresses.remove(&download_progress);
                 all_download_progress.inc(1);
+
                 Ok::<_, anyhow::Error>(())
             }
         };
@@ -420,7 +423,11 @@ async fn download_partitions(
     let mut file_paths = HashMap::new();
     let hashes = files_to_download
         .iter()
-        .map(|name| file_to_hash.get(name).ok_or_else(|| anyhow::anyhow!("{}のハッシュが見つかりませんでした", name)))
+        .map(|name| {
+            file_to_hash
+                .get(name)
+                .ok_or_else(|| anyhow::anyhow!("{}のハッシュが見つかりませんでした", name))
+        })
         .collect::<Result<HashSet<_>>>()?;
     for hash in hashes {
         let hash_info = hash_infos
