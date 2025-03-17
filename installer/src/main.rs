@@ -133,12 +133,11 @@ async fn main_inner() -> Result<()> {
         .await?;
 
     info!("インストール先を選択してください。");
-    // let install_dir = rfd::AsyncFileDialog::new()
-    //     .pick_folder()
-    //     .await
-    //     .ok_or_else(|| anyhow::anyhow!("インストール先が選択されませんでした"))?;
-    // let install_dir = install_dir.path();
-    let install_dir = std::path::Path::new("/mnt/e/zundaarrow-tts");
+    let install_dir = rfd::AsyncFileDialog::new()
+        .pick_folder()
+        .await
+        .ok_or_else(|| anyhow::anyhow!("インストール先が選択されませんでした"))?;
+    let install_dir = install_dir.path();
 
     let file_hashes_path = install_dir.join(FILE_HASHES_NAME);
 
@@ -175,12 +174,12 @@ async fn main_inner() -> Result<()> {
     }
     info!("インストール先：{}", install_dir.display());
 
-    // if !dialoguer::Confirm::new()
-    //     .with_prompt("実行しますか？")
-    //     .interact()?
-    // {
-    //     return Ok(());
-    // }
+    if !dialoguer::Confirm::new()
+        .with_prompt("実行しますか？")
+        .interact()?
+    {
+        return Ok(());
+    }
 
     let mut archive_infos = release_assets
         .iter()
