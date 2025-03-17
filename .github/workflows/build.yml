@@ -79,6 +79,13 @@ jobs:
           key: ${{ steps.cache_key.outputs.cache_key }}
           path: ./zundamon-speech
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        if: runner.os == 'windows-latest'
+        with:
+          path: ~/AppData/Local/pip/Cache
+          key: pip-${{ runner.os }}-${{ matrix.device }}-v0
+
       - name: Setup zundamon-speech
         run: |
           if [ -z "${{ steps.cache.outputs.cache-hit }}" ]; then
