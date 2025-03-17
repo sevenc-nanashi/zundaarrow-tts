@@ -1,4 +1,8 @@
-use lzma_rs::lzma_decompress;
+mod log;
+use anyhow::{Context, Result};
+use colored::Colorize;
+use itertools::Itertools;
+use lzma::LzmaReader;
 use std::{
     collections::{HashMap, HashSet},
     io::Read,
@@ -6,10 +10,6 @@ use std::{
 };
 use tap::Pipe;
 use tokio::io::AsyncWriteExt;
-mod log;
-use anyhow::Result;
-use colored::Colorize;
-use itertools::Itertools;
 
 #[derive(Debug, Copy, Clone, Default, PartialEq, strum::Display, strum::EnumString)]
 enum Device {
@@ -224,7 +224,13 @@ async fn main_inner() -> Result<()> {
     }
 
     info!("ファイルを展開中...");
-    deploy_files(&downloaded_files, install_dir, &release_info.hashes).await?;
+    deploy_files(
+        &files_to_download,
+        &downloaded_files,
+        install_dir,
+        &release_info.hashes,
+    )
+    .await?;
     for (_, downloaded_file) in downloaded_files {
         tokio::fs::remove_file(downloaded_file).await?;
     }
@@ -269,7 +275,7 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
     let client = Arc::new(reqwest::Client::new());
 
     let all_download_progress =
-        download_progresses.add(indicatif::ProgressBar::new(optimized_specs.len() as u64));
+        download_progresses.add(indicatif::ProgressBar::new(download_specs.len() as u64));
     all_download_progress.set_style(
         indicatif::ProgressStyle::default_bar()
             .template(
@@ -323,9 +329,7 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
                         .dest
                         .get(current_dest_index + 1)
                         .map(|(_, start)| *start)
-                        .is_some_and(|start| {
-                            current_bytes + chunk.len() as u64 >= start
-                        })
+                        .is_some_and(|start| current_bytes + chunk.len() as u64 >= start)
                     {
                         let next_dest_start_bytes = spec.dest[current_dest_index + 1].1;
                         let part = chunk.split_to((next_dest_start_bytes - current_bytes) as usize);
@@ -333,6 +337,7 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
                         download_progress.inc(part.len() as u64);
                         dest_file.write_all(&part).await?;
 
+                        all_download_progress.inc(1);
                         dest_file =
                             tokio::fs::File::create(&spec.dest[current_dest_index + 1].0).await?;
                         current_dest_index += 1;
@@ -343,9 +348,9 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
                     dest_file.write_all(&chunk).await?;
                     current_bytes += chunk.len() as u64;
                 }
+                all_download_progress.inc(1);
                 download_progress.finish();
                 download_progresses.remove(&download_progress);
-                all_download_progress.inc(1);
 
                 Ok::<_, anyhow::Error>(())
             }
@@ -465,27 +470,37 @@ async fn download_partitions(
 }
 
 async fn deploy_files(
+    files_to_download: &[String],
     downloaded_files: &HashMap<FileHash, std::path::PathBuf>,
     install_dir: &std::path::Path,
     file_to_hash: &HashMap<String, FileHash>,
 ) -> Result<()> {
     let mut hash_to_files = HashMap::new();
     for (file, hash) in file_to_hash {
+        if !files_to_download.contains(file) {
+            continue;
+        }
         hash_to_files
             .entry(hash)
             .or_insert_with(Vec::new)
             .push(file.clone());
     }
 
-    let progress = indicatif::ProgressBar::new(hash_to_files.len() as u64);
+    let progress = indicatif::ProgressBar::new(files_to_download.len() as u64).with_style(
+        indicatif::ProgressStyle::default_bar()
+            .template("{spinner:.blue} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len}")?
+            .progress_chars("#>-"),
+    );
+
     let mut futures = Vec::new();
     let semaphore = Arc::new(tokio::sync::Semaphore::new(4));
     for (hash, paths) in hash_to_files {
+        let hash = hash.clone();
         let dest_paths = paths
             .iter()
             .map(|path| install_dir.join(path))
             .collect::<Vec<_>>();
-        let input_path = downloaded_files.get(hash).unwrap().clone();
+        let input_path = downloaded_files.get(&hash).unwrap().clone();
         let progress = progress.clone();
 
         let semaphore = semaphore.clone();
@@ -494,13 +509,19 @@ async fn deploy_files(
 
             tokio::task::spawn_blocking(move || -> Result<()> {
                 let input = std::fs::File::open(input_path)?;
-                let mut input = std::io::BufReader::new(input);
-                let mut output = std::fs::File::create(&dest_paths[0])?;
+                let input = std::io::BufReader::new(input);
+                std::fs::create_dir_all(dest_paths[0].parent().unwrap())?;
 
-                lzma_decompress(&mut input, &mut output)?;
+                let mut input = LzmaReader::new_decompressor(input)
+                    .with_context(|| format!("{}の解凍に失敗しました", hash))?;
+                let mut output = std::fs::File::create(&dest_paths[0])?;
+                std::io::copy(&mut input, &mut output)?;
                 progress.inc(1);
                 for dest_path in dest_paths.iter().skip(1) {
+                    std::fs::create_dir_all(dest_path.parent().unwrap())?;
                     std::fs::copy(&dest_paths[0], dest_path)?;
+
+                    progress.inc(1);
                 }
 
                 Ok(())
