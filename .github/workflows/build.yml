@@ -63,9 +63,6 @@ jobs:
         with:
           working-directory: ./zundamon-speech-setup
 
-      - name: Set up vcpkg
-        uses: friendlyanon/setup-vcpkg@v1
-
       - name: Cache setup
         id: cache_key
         run: |
@@ -116,6 +113,8 @@ jobs:
       - name: Build
         id: build
         run: |
+          cargo install cargo-vcpkg
+          cargo vcpkg build --release
           pnpm run build ${{ needs.info.outputs.version }} ${{ matrix.device }}
 
       - name: Release
