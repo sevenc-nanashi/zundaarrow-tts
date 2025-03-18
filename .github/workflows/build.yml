@@ -79,6 +79,13 @@ jobs:
           key: ${{ steps.cache_key.outputs.cache_key }}
           path: ./zundamon-speech
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        if: runner.os == 'Windows'
+        with:
+          path: ~/AppData/Local/pip/Cache
+          key: pip-${{ runner.os }}-${{ matrix.device }}-v0
+
       - name: Setup zundamon-speech
         run: |
           if [ -z "${{ steps.cache.outputs.cache-hit }}" ]; then
@@ -96,9 +103,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Cache archive repository
+        uses: actions/cache@v4
+        with:
+          key: archive-repository-${{ runner.os }}-${{ matrix.device }}-v0
+          path: |
+            ./dist-packed/repository
+
       - name: Build
         id: build
         run: |
+          cargo install cargo-vcpkg
+          (cd installer && cargo vcpkg build)
           pnpm run build ${{ needs.info.outputs.version }} ${{ matrix.device }}
 
       - name: Release
@@ -163,4 +179,3 @@ jobs:
         run: gh workflow run pages.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
