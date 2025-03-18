@@ -110,7 +110,7 @@ task "setup:python" do
     end
     sh "../standalone_python/#{python_bin} -m pip install -r requirements.txt --no-compile --no-cache-dir"
     sh "../standalone_python/#{python_bin} -m pip install -r ../server/requirements.txt --no-compile --no-cache-dir"
-    sh "../standalone_python/#{python_bin} -m pip uninstall -y modelscope matplotlib streamlit fonttools"
+    sh "../standalone_python/#{python_bin} -m pip uninstall -y modelscope streamlit fonttools"
 
     lib_root =
       (
