@@ -179,7 +179,7 @@ async function compressFiles(destRoot: string, filesRoot: string) {
       filePaths.push(`${filesRoot}/${root}`);
     } else {
       console.log(`Traversing ${root}`);
-      for await (const file of fs.glob(`${filesRoot}/${root}/**/*`, {
+      for await (const file of fs.glob(`${filesRoot}/${root}/**/{.,}*`, {
         withFileTypes: true,
       })) {
         if (!file.isFile()) {
