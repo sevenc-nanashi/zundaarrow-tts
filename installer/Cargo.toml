@@ -29,3 +29,6 @@ tokio = { version = "1.44.0", features = ["full"] }
 git = "https://github.com/microsoft/vcpkg"
 rev = "043abf2"
 dependencies = ["liblzma"]
+
+[package.metadata.vcpkg.target]
+x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }
