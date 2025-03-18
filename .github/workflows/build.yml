@@ -114,7 +114,7 @@ jobs:
         id: build
         run: |
           cargo install cargo-vcpkg
-          cargo vcpkg build --release
+          cargo vcpkg build
           pnpm run build ${{ needs.info.outputs.version }} ${{ matrix.device }}
 
       - name: Release
