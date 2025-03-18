@@ -9,6 +9,7 @@ import createXxhash from "xxhash-wasm";
 import lzmajs from "lzma-native";
 import { pipeline } from "node:stream/promises";
 import { Semaphore } from "@core/asyncutil";
+import { glob } from "glob";
 import cliProgress from "cli-progress";
 
 if (process.argv.length < 4) {
@@ -179,9 +180,13 @@ async function compressFiles(destRoot: string, filesRoot: string) {
       filePaths.push(`${filesRoot}/${root}`);
     } else {
       console.log(`Traversing ${root}`);
-      for await (const file of fs.glob(`${filesRoot}/${root}/**/{.,}*`, {
-        withFileTypes: true,
-      })) {
+      for (const file of await glob(
+        `${filesRoot}/${root}/**/*`.replaceAll("\\", "/"),
+        {
+          withFileTypes: true,
+          dot: true,
+        },
+      )) {
         if (!file.isFile()) {
           continue;
         }
