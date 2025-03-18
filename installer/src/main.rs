@@ -154,8 +154,11 @@ async fn main_inner() -> Result<()> {
 
     let mut remove_size = 0;
     for name in &files_to_remove {
-        let stat = tokio::fs::metadata(install_dir.join(name.clone())).await?;
-        remove_size += stat.len();
+        if let Ok(stat) = tokio::fs::metadata(install_dir.join(name.clone())).await {
+            remove_size += stat.len();
+        } else {
+            warn!("{}が見つかりませんでした", name);
+        }
     }
 
     info!(
