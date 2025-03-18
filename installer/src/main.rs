@@ -154,7 +154,7 @@ async fn main_inner() -> Result<()> {
 
     let mut remove_size = 0;
     for name in &files_to_remove {
-        if let Ok(stat) = tokio::fs::metadata(install_dir.join(name.clone())).await {
+        if let Ok(stat) = fs_err::tokio::metadata(install_dir.join(name.clone())).await {
             remove_size += stat.len();
         } else {
             warn!("{}が見つかりませんでした", name);
@@ -211,7 +211,7 @@ async fn main_inner() -> Result<()> {
     info!("ダウンロード中...");
 
     let download_root = install_dir.join("downloads");
-    tokio::fs::create_dir_all(&download_root).await?;
+    fs_err::tokio::create_dir_all(&download_root).await?;
     let downloaded_files = download_partitions(
         &archive_infos,
         &release_info.hashes,
@@ -222,7 +222,7 @@ async fn main_inner() -> Result<()> {
     .await?;
 
     for name in files_to_remove {
-        tokio::fs::remove_file(install_dir.join(name)).await?;
+        fs_err::tokio::remove_file(install_dir.join(name)).await?;
     }
 
     info!("ファイルを展開中...");
@@ -234,11 +234,11 @@ async fn main_inner() -> Result<()> {
     )
     .await?;
     for (_, downloaded_file) in downloaded_files {
-        tokio::fs::remove_file(downloaded_file).await?;
+        fs_err::tokio::remove_file(downloaded_file).await?;
     }
 
     let file_hashes = serde_json::to_vec(&release_info.hashes)?;
-    tokio::fs::write(file_hashes_path, file_hashes).await?;
+    fs_err::tokio::write(file_hashes_path, file_hashes).await?;
 
     info!("インストールが完了しました。");
 
@@ -323,7 +323,7 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
                     download_progress.set_length(content_length);
                 }
                 assert_eq!(spec.dest[0].1, 0);
-                let mut dest_file = tokio::fs::File::create(&spec.dest[0].0).await?;
+                let mut dest_file = fs_err::tokio::File::create(&spec.dest[0].0).await?;
                 let mut current_dest_index = 0;
                 let mut current_bytes = 0;
                 while let Some(mut chunk) = response.chunk().await? {
@@ -341,7 +341,7 @@ async fn download_urls(download_specs: &[DownloadSpecification]) -> Result<()> {
 
                         all_download_progress.inc(1);
                         dest_file =
-                            tokio::fs::File::create(&spec.dest[current_dest_index + 1].0).await?;
+                            fs_err::tokio::File::create(&spec.dest[current_dest_index + 1].0).await?;
                         current_dest_index += 1;
                         current_bytes = next_dest_start_bytes;
                     }
@@ -370,7 +370,7 @@ async fn diff_destination(
     old_destination: &std::path::Path,
     files_to_hash: &HashMap<String, FileHash>,
 ) -> Result<(Vec<String>, Vec<String>)> {
-    let existing_file_hashes = tokio::fs::read(&old_destination.join(FILE_HASHES_NAME)).await?;
+    let existing_file_hashes = fs_err::tokio::read(&old_destination.join(FILE_HASHES_NAME)).await?;
     let existing_file_hashes: HashMap<String, FileHash> =
         serde_json::from_slice(&existing_file_hashes)?;
     let mut files_to_download = Vec::new();

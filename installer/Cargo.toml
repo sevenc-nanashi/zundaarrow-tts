@@ -10,6 +10,7 @@ colored = "3.0.0"
 dialoguer = "0.11.0"
 enable-ansi-support = "0.2.1"
 figlet-rs = "0.1.5"
+fs-err = { version = "3.1.0", features = ["tokio"] }
 futures = "0.3.31"
 indicatif = "0.17.11"
 itertools = "0.14.0"
