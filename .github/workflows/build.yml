@@ -81,7 +81,7 @@ jobs:
 
       - name: Cache pip
         uses: actions/cache@v4
-        if: runner.os == 'windows-latest'
+        if: runner.os == 'Windows'
         with:
           path: ~/AppData/Local/pip/Cache
           key: pip-${{ runner.os }}-${{ matrix.device }}-v0
